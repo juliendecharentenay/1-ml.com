@@ -9,10 +9,6 @@
     @to_signup="to('#signsection'); sign='sign-up';"
     />
 
-  <BannerText>
-    The service is free whilst in Beta version. Anticipated official launch: January 2023
-  </BannerText>
-
   <HeaderSection src="/assets/img/mail.jpg">
     <template #header>Regain control of your mailbox</template>
     Stem the flow of emails from newsletters and services you subscribe and contact using an email masking service
@@ -119,10 +115,6 @@
 
   <!-- Pricing Section -->
   <div class="bg-white" id="pricingsection">
-  <BannerText>
-    The service is free whilst in Beta version. Anticipated official launch: January 2023
-  </BannerText>
-
   <PricingSection 
     @view_terms="to('#termssection');"
     @start_trial="to('#signsection'); sign = 'sign-up';"
@@ -284,7 +276,6 @@ import PrivacySection from './components/PrivacySection.vue';
 import SignUpConfirmAlert from './components/SignUpConfirmAlert.vue';
 import VerificationAlert from './components/VerificationAlert.vue';
 import SnackAlert from '@/components/SnackAlert.vue';
-import BannerText from './components/BannerText.vue';
 
 export default {
   name: 'App',
@@ -305,7 +296,6 @@ export default {
     SignUpConfirmAlert,
     VerificationAlert,
     SnackAlert,
-    BannerText,
   },
   data: function() {
     return {

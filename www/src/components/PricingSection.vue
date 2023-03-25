@@ -4,7 +4,7 @@
     <div class="pt-12 sm:pt-16 lg:pt-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-          <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl lg:text-5xl">Service free until official launch.<br/>Pricing provided for information</h2>
+          <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl lg:text-5xl">Service currently free,</h2>
 <!--
           <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl lg:text-5xl">Simple, usage based pricing</h2>
           <p class="mt-4 text-xl text-gray-600">Sign-up for a 30 day trial - no credit card required</p -->
@@ -15,8 +15,8 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-lg mx-auto rounded-lg shadow-lg overflow-hidden lg:max-w-none lg:flex">
           <div class="flex-1 bg-gray-50 px-6 py-8 lg:p-12">
-            <h3 class="text-2xl font-extrabold text-gray-600 sm:text-3xl">Monthly Subscription</h3>
-            <p class="mt-6 text-base text-gray-400">One monthly fee to have control over your incoming emails</p>
+            <h3 class="text-2xl font-extrabold text-gray-600 sm:text-3xl">Due to low usage and operating costs.</h3>
+            <p class="mt-6 text-base text-gray-400">If usage and operating costs were to increase, a subscription fee would be considered or the service would be stopped...</p>
             <div class="mt-8">
               <div class="flex items-center">
               <h4 class="flex-shrink-0 pr-4 bg-white text-sm tracking-wider font-semibold uppercase text-indigo-400">What's included</h4>
@@ -37,12 +37,13 @@
           </div>
           <div class="py-8 px-6 text-center bg-gray-100 lg:flex-shrink-0 lg:flex lg:flex-col lg:justify-center lg:p-12">
             <p class="text-lg leading-6 font-medium text-gray-800">Currently free</p>
-            <p class="leading-6 font-normal text-gray-600">After launch:</p>
+            <!-- <p class="leading-6 font-normal text-gray-600">After launch:</p> 
             <p class="mt-4 text-lg leading-6 font-medium text-gray-600">Pay monthly</p>
             <div class="mt-4 flex items-center justify-center text-5xl font-extrabold text-gray-600">
               <span> £3 </span>
               <span class="ml-3 text-xl font-medium text-gray-500"> GBP </span>
             </div>
+-->
             <p class="mt-4 text-sm">
               <a href="#!" class="font-medium text-gray-500 underline" @click="$emit('view_terms')" id="pricingsection-a-readterms"> Read our service terms </a>
             </p>

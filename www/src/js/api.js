@@ -8,7 +8,7 @@ function retry(fn, retries=2) {
   return fn()
   .then((r) => {
     if (! r.ok && retries > 0) { // Response is an error & can retries
-      console.log("Retrying - number of retries left: ", retries);
+      // console.log("Retrying - number of retries left: ", retries);
       return retry(fn, retries - 1);
     } else {
       return r;
