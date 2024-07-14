@@ -2,11 +2,11 @@ use lambda_http::RequestExt;
 use async_trait::async_trait;
 
 #[async_trait]
-pub trait Request: Sync {
+pub trait Request: Sync + Send {
   async fn run(&self, event: &lambda_http::Request) -> Result<(http::StatusCode, String), Box<dyn std::error::Error>> {
     let identity = match event.request_context() {
       lambda_http::request::RequestContext::ApiGatewayV1(context) => {
-        match context.authorizer.get("claims") {
+        match context.authorizer.fields.get("claims") {
           Some(claim) => Some(oneml::Identity::from_authorizer(claim)?),
           None => None,
         }
@@ -60,14 +60,14 @@ impl Handler {
     if let lambda_http::request::RequestContext::ApiGatewayV1(context) = self.event.request_context() {
       let path = context.resource_path.as_ref().ok_or("Unable to retrieve resource path")?;
       match context.http_method {
-        http::Method::GET if regex::Regex::new(r"^/api/me$")?.is_match(path) 
+        lambda_http::http::Method::GET if regex::Regex::new(r"^/api/me$")?.is_match(path) 
           => Ok(Box::new(crate::requestapime::Get::default())),
-        http::Method::PATCH if regex::Regex::new(r"^/api/me$")?.is_match(path) 
+        lambda_http::http::Method::PATCH if regex::Regex::new(r"^/api/me$")?.is_match(path) 
           => Ok(Box::new(crate::requestapime::Patch::default())),
 
-        http::Method::GET if regex::Regex::new(r"^/api/email$")?.is_match(path) 
+        lambda_http::http::Method::GET if regex::Regex::new(r"^/api/email$")?.is_match(path) 
           => Ok(Box::new(crate::requestapiemail::Get::default())),
-        http::Method::PATCH if regex::Regex::new(r"^/api/email/.*$")?.is_match(path) 
+        lambda_http::http::Method::PATCH if regex::Regex::new(r"^/api/email/.*$")?.is_match(path) 
           => Ok(Box::new(crate::requestapiemail::Patch::default())),
 
         _ => Err(format!("Unable to match method {} on path {}", context.http_method, path).into()),

@@ -16,7 +16,7 @@ async fn handle(event: lambda_http::Request) -> Result<lambda_http::Response<Str
         Err(e) => {
             let r = oneml::response::InternalServerError { message: e.to_string() };
             let r = lambda_http::Response::builder()
-                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                     .status(lambda_http::http::StatusCode::INTERNAL_SERVER_ERROR)
                      .body(serde_json::to_string(&r)?)?;
             Ok(r)
         },

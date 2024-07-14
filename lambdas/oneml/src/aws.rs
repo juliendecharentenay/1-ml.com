@@ -4,8 +4,7 @@ use std::{
 };
 use simple_error::SimpleError;
 use async_trait::async_trait;
-use aws_sdk_dynamodb::model::AttributeValue;
-use futures_util::StreamExt;
+// use futures_util::StreamExt;
 
 use crate::{account, email};
 
@@ -17,15 +16,15 @@ pub struct Store {
 
 impl Store {
   pub async fn default() -> Result<Store, Box<dyn Error>> { 
-    let shared_config = aws_config::load_from_env().await;
+    let shared_config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let client = aws_sdk_dynamodb::Client::new(&shared_config);
     Ok( Store { client } )
   }
 }
 
 impl Store {
-    fn queries_to_account(user_item: HashMap<String, AttributeValue>, 
-                          prefix_item: Option<HashMap<String, AttributeValue>>) -> Result<account::Account, Box<dyn Error>> {
+    fn queries_to_account(user_item: HashMap<String, aws_sdk_dynamodb::types::AttributeValue>, 
+                          prefix_item: Option<HashMap<String, aws_sdk_dynamodb::types::AttributeValue>>) -> Result<account::Account, Box<dyn Error>> {
       let user_id = user_item.get("UserId").ok_or_else(|| SimpleError::new("Retrieved item does not contain field UserId"))?
                   .as_s().map_err(|_| SimpleError::new("Unable to convert field UserId"))?.to_string();
       let email   = user_item.get("Email").ok_or_else(|| SimpleError::new("Retrieved item does not contain field Email"))?
@@ -51,7 +50,7 @@ impl account::Store for Store {
     log::info!("Get account for user id: {}", user_id);
     let user_q = self.client.get_item()
             .table_name(config::Config::USER_TABLE_NAME)
-            .key("UserId", AttributeValue::S(user_id.to_string()))
+            .key("UserId", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
             .send().await?;
     Store::log_cu(&user_q.consumed_capacity);
     if user_q.item.is_none() { return Ok(None); }
@@ -61,7 +60,7 @@ impl account::Store for Store {
         .table_name(config::Config::PREFIX_TABLE_NAME)
         .index_name("UserIdIndex") // Use global index
         .key_condition_expression("UserId = :u")
-        .expression_attribute_values(":u", AttributeValue::S(user_id.to_string()))
+        .expression_attribute_values(":u", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
         .send().await?;
     Store::log_cu(&prefix_q.consumed_capacity);
     let prefix_q = match prefix_q.items {
@@ -85,7 +84,7 @@ impl account::Store for Store {
     log::info!("Get account associated with prefix{:?}", prefix);
     let prefix_q = self.client.get_item()
         .table_name(config::Config::PREFIX_TABLE_NAME)
-        .key("Prefix", AttributeValue::S(prefix.to_string()))
+        .key("Prefix", aws_sdk_dynamodb::types::AttributeValue::S(prefix.to_string()))
         .send().await?;
     Store::log_cu(&prefix_q.consumed_capacity);
     if prefix_q.item.is_none() { return Err(Box::new(SimpleError::new(format!("Unable to retrieve information from Prefix {}", prefix).as_str()))); }
@@ -110,11 +109,11 @@ impl account::Store for Store {
     let r = self.client.put_item()
       .table_name(config::Config::USER_TABLE_NAME)
       .condition_expression("attribute_not_exists(UserId)")
-      .item("UserId", AttributeValue::S(account.user_id.clone()))
-      .item("Email",  AttributeValue::S(account.email.clone()))
-      .item("Status", AttributeValue::S(status))
-      .item("DateCreated", AttributeValue::S(account.date_created.to_string()))
-      .return_values(aws_sdk_dynamodb::model::ReturnValue::AllOld)
+      .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(account.user_id.clone()))
+      .item("Email",  aws_sdk_dynamodb::types::AttributeValue::S(account.email.clone()))
+      .item("Status", aws_sdk_dynamodb::types::AttributeValue::S(status))
+      .item("DateCreated", aws_sdk_dynamodb::types::AttributeValue::S(account.date_created.to_string()))
+      .return_values(aws_sdk_dynamodb::types::ReturnValue::AllOld)
       .send().await?;
     if r.attributes.is_some() {
       return Err(Box::new(SimpleError::new(format!("Creation of new account seems to have over-written another account {:#?}", r.attributes).as_str())));
@@ -128,20 +127,20 @@ impl account::Store for Store {
     let _user_q = self.client.put_item()
          .table_name(config::Config::USER_TABLE_NAME)
          .condition_expression("attribute_exists(UserId)")
-         .item("UserId", AttributeValue::S(account.user_id.clone()))
-         .item("Email", AttributeValue::S(account.email.clone()))
-         .item("Status", AttributeValue::S(status))
-         .item("DateCreated", AttributeValue::S(account.date_created.to_string()))
-         .return_values(aws_sdk_dynamodb::model::ReturnValue::None)
+         .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(account.user_id.clone()))
+         .item("Email", aws_sdk_dynamodb::types::AttributeValue::S(account.email.clone()))
+         .item("Status", aws_sdk_dynamodb::types::AttributeValue::S(status))
+         .item("DateCreated", aws_sdk_dynamodb::types::AttributeValue::S(account.date_created.to_string()))
+         .return_values(aws_sdk_dynamodb::types::ReturnValue::None)
          .send().await?;
      if let Some(prefix) = account.prefix.as_ref() {
        let _prefix_q = self.client.put_item()
          .table_name(config::Config::PREFIX_TABLE_NAME)
          .condition_expression("( attribute_not_exists(UserId) AND attribute_not_exists(Prefix) ) OR ( UserId = :u AND Prefix = :p )")
-         .expression_attribute_values(":u", AttributeValue::S(account.user_id.clone()))
-         .expression_attribute_values(":p", AttributeValue::S(prefix.clone()))
-         .item("UserId", AttributeValue::S(account.user_id.clone()))
-         .item("Prefix", AttributeValue::S(prefix.clone()))
+         .expression_attribute_values(":u", aws_sdk_dynamodb::types::AttributeValue::S(account.user_id.clone()))
+         .expression_attribute_values(":p", aws_sdk_dynamodb::types::AttributeValue::S(prefix.clone()))
+         .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(account.user_id.clone()))
+         .item("Prefix", aws_sdk_dynamodb::types::AttributeValue::S(prefix.clone()))
          .send().await?;
      }
      Ok(account)
@@ -154,7 +153,7 @@ impl account::Store for Store {
       log::info!("Check if user already has a prefix assigned");
       let prefix_check = self.client.get_item()
           .table_name(config::Config::PREFIX_TABLE_NAME)
-          .key("UserId", AttributeValue::S(user_id.to_string()))
+          .key("UserId", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
           .send().await?;
       Store::log_cu(&prefix_check.consumed_capacity);
       if prefix_check.item.is_some() {
@@ -164,7 +163,7 @@ impl account::Store for Store {
       log::info!("Check that prefix {} is not already taken", v);
       let prefix_check = self.client.get_item()
           .table_name(config::Config::PREFIX_TABLE_NAME)
-          .key("Prefix", AttributeValue::S(v.clone()))
+          .key("Prefix", aws_sdk_dynamodb::types::AttributeValue::S(v.clone()))
           .send().await?;
       Store::log_cu(&prefix_check.consumed_capacity);
       if prefix_check.item.is_some() {
@@ -175,8 +174,8 @@ impl account::Store for Store {
       let _r = self.client.put_item()
           .table_name(config::Config::PREFIX_TABLE_NAME)
           .condition_expression("attribute_not_exists(UserId) AND attribute_not_exists(Prefix)")
-          .item("UserId", AttributeValue::S(user_id.to_string()))
-          .item("Prefix", AttributeValue::S(v.clone()))
+          .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
+          .item("Prefix", aws_sdk_dynamodb::types::AttributeValue::S(v.clone()))
           .send().await?;
     }
     Ok(())
@@ -187,8 +186,8 @@ impl account::Store for Store {
     log::info!("Delete account associated with user id {}", user_id);
     let user_query = self.client.delete_item()
           .table_name(config::Config::USER_TABLE_NAME)
-          .return_values(aws_sdk_dynamodb::model::ReturnValue::AllOld)
-          .key("UserId", AttributeValue::S(user_id.to_string()))
+          .return_values(aws_sdk_dynamodb::types::ReturnValue::AllOld)
+          .key("UserId", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
           .send().await?;
     if user_query.attributes.is_none() {
       return Err(Box::new(SimpleError::new(format!("Account associated with user id {} does not exist", user_id).as_str())));
@@ -196,11 +195,11 @@ impl account::Store for Store {
 
     let prefix_query = self.client.update_item()
           .table_name(config::Config::PREFIX_TABLE_NAME)
-          .return_values(aws_sdk_dynamodb::model::ReturnValue::AllOld)
+          .return_values(aws_sdk_dynamodb::types::ReturnValue::AllOld)
           .condition_expression("attribute_exists(UserId)")
-          .key("UserId", AttributeValue::S(user_id.to_string()))
+          .key("UserId", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
           .update_expression("SET UserId = :u")
-          .expression_attribute_values(":u", AttributeValue::S("-1".to_string()))
+          .expression_attribute_values(":u", aws_sdk_dynamodb::types::AttributeValue::S("-1".to_string()))
           .send().await?;
 
      Store::queries_to_account(user_query.attributes.ok_or_else(|| SimpleError::new("Unable to retrieve user item"))?,
@@ -209,7 +208,7 @@ impl account::Store for Store {
 }
 
 impl Store {
-  fn query_to_email(item: HashMap<String, AttributeValue>) -> Result<email::Email, Box<dyn Error>> {
+  fn query_to_email(item: HashMap<String, aws_sdk_dynamodb::types::AttributeValue>) -> Result<email::Email, Box<dyn Error>> {
     let user_id = item.get("UserId").ok_or_else(|| SimpleError::new("Retrieved item does not contain field UserId"))?
                   .as_s().map_err(|_| SimpleError::new("Unable to convert field UserId"))?.to_string();
     let email   = item.get("Email").ok_or_else(|| SimpleError::new("Retrieved item does not contain field Email"))?
@@ -229,9 +228,9 @@ impl email::Store for Store {
     let _email_q = self.client.put_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
         .condition_expression("attribute_not_exists(Email)")
-        .item("UserId", AttributeValue::S(email.user_id.clone()))
-        .item("Email",  AttributeValue::S(email.email.clone()))
-        .item("Status", AttributeValue::S(status))
+        .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(email.user_id.clone()))
+        .item("Email",  aws_sdk_dynamodb::types::AttributeValue::S(email.email.clone()))
+        .item("Status", aws_sdk_dynamodb::types::AttributeValue::S(status))
         .send().await?;
     Ok(email)
   }
@@ -242,7 +241,7 @@ impl email::Store for Store {
        .table_name(config::Config::EMAIL_TABLE_NAME)
        .index_name("UserIdIndex") // Global index
        .key_condition_expression("UserId = :u")
-       .expression_attribute_values(":u", AttributeValue::S(user_id.to_string()))
+       .expression_attribute_values(":u", aws_sdk_dynamodb::types::AttributeValue::S(user_id.to_string()))
        .into_paginator()
        .send();
 
@@ -265,9 +264,9 @@ impl email::Store for Store {
     let _email_q = self.client.put_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
         .condition_expression("attribute_exists(Email) AND attribute_exists(UserId)")
-        .item("UserId", AttributeValue::S(email.user_id.clone()))
-        .item("Email",  AttributeValue::S(email.email.clone()))
-        .item("Status", AttributeValue::S(status))
+        .item("UserId", aws_sdk_dynamodb::types::AttributeValue::S(email.user_id.clone()))
+        .item("Email",  aws_sdk_dynamodb::types::AttributeValue::S(email.email.clone()))
+        .item("Status", aws_sdk_dynamodb::types::AttributeValue::S(status))
         .send().await?;
     Ok(email)
   }
@@ -275,7 +274,7 @@ impl email::Store for Store {
   async fn from_address(&self,  email_address: &str) -> Result<Option<email::Email>, Box<dyn Error>> {
     let email_q = self.client.get_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
-        .key("Email", AttributeValue::S(email_address.to_string()))
+        .key("Email", aws_sdk_dynamodb::types::AttributeValue::S(email_address.to_string()))
         .send().await?;
     match email_q.item {
       Some(item) => Ok(Some(Store::query_to_email(item)?)),
@@ -285,7 +284,7 @@ impl email::Store for Store {
 }
 
 impl Store {
-  fn log_cu(c: &Option<aws_sdk_dynamodb::model::ConsumedCapacity>) {
+  fn log_cu(c: &Option<aws_sdk_dynamodb::types::ConsumedCapacity>) {
     if let Some(c) = c.as_ref() { 
       if let Some(cu) = c.read_capacity_units {
         if cu > 0.0 { log::info!("... read consumption: {}RRU", cu); }

@@ -9,7 +9,7 @@ use crate::aws::config::Config;
 pub struct Mail {
     config: Option<aws_types::sdk_config::SdkConfig>,
     client: Option<aws_sdk_ses::Client>,
-    message: Option<aws_sdk_ses::model::Message>,
+    message: Option<aws_sdk_ses::types::Message>,
     message_id: String,
 }
 
@@ -20,7 +20,7 @@ impl Mail {
 
     pub async fn send(&mut self, from: &str, to: &str, reply_to: &str, send_text: bool, send_html: bool) -> Result<(), Box<dyn Error>> {
         if self.config.is_none() {
-            self.config = Some(aws_config::load_from_env().await);
+            self.config = Some(aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await);
         }
 
         if self.message.is_none() {
@@ -36,20 +36,20 @@ impl Mail {
                 .await?;
 
             let (subject, text, html) = Mail::parse_eml(str::from_utf8(s3_message.into_bytes().as_ref())?)?;
-            self.message = Some(aws_sdk_ses::model::Message::builder()
+            self.message = Some(aws_sdk_ses::types::Message::builder()
                 .subject(
-                    aws_sdk_ses::model::Content::builder()
+                    aws_sdk_ses::types::Content::builder()
                     .data(format!("[1-ml] {}", subject.ok_or_else(|| SimpleError::new("Subject is not available"))?))
-                    .build()
+                    .build()?
                     )
                 .body(
                     {
-                        let mut builder = aws_sdk_ses::model::Body::builder();
+                        let mut builder = aws_sdk_ses::types::Body::builder();
                         if send_text {
-                          if let Some(text) = text { builder = builder.text(aws_sdk_ses::model::Content::builder().data(text).build()); }
+                          if let Some(text) = text { builder = builder.text(aws_sdk_ses::types::Content::builder().data(text).build()?); }
                         }
                         if send_html {
-                          if let Some(html) = html { builder = builder.html(aws_sdk_ses::model::Content::builder().data(html).build()); }
+                          if let Some(html) = html { builder = builder.html(aws_sdk_ses::types::Content::builder().data(html).build()?); }
                         }
                         builder.build()
                     }
@@ -69,7 +69,7 @@ impl Mail {
             .reply_to_addresses(reply_to.to_string())
             .return_path(reply_to)
             .destination(
-                aws_sdk_ses::model::Destination::builder()
+                aws_sdk_ses::types::Destination::builder()
                 .to_addresses(to)
                 .build()
                 )
@@ -119,11 +119,11 @@ mod tests {
     fn mailparse_parse_email() -> Result<(), Box<dyn Error>> {
         let content = eml_content();
         let m = mailparse::parse_mail(content.as_bytes())?;
-        println!("it_parse_email: content_type {:?}",m.ctype);
-        // println!("it_parse_email: body {:?}",m.get_body());
-        println!("it_parse_email: n subparts {:?}",m.subparts.len());
+        log::debug!("it_parse_email: content_type {:?}",m.ctype);
+        // log::debug!("it_parse_email: body {:?}",m.get_body());
+        log::debug!("it_parse_email: n subparts {:?}",m.subparts.len());
         for subpart in m.subparts.iter() {
-            println!("it_parse_email: content type {:?}/body {:?}", subpart.ctype, subpart.get_body());
+            log::debug!("it_parse_email: content type {:?}/body {:?}", subpart.ctype, subpart.get_body());
         }
         assert!(m.ctype.mimetype.eq("multipart/alternative"));
         Ok(())

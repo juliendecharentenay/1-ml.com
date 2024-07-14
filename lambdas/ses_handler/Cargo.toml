@@ -6,17 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+log = "0"
+env_logger = "0"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 tokio = { version = "1", features = [ "macros" ] }
-simple-error = "0.2"
+simple-error = "0"
 regex = "1"
-mailparse = "0.13"
-lambda_runtime = "0.5"
+mailparse = "0"
+lambda_runtime = "0"
 
-aws-config  = "0.46"
-aws-types   = "0.46"
-aws-sdk-ses = "0.16"
-aws-sdk-s3  = "0.16"
+aws-config  = "1"
+aws-types   = "1"
+aws-sdk-ses = "1"
+aws-sdk-s3  = "1"
 
 oneml = { path = "../oneml" }

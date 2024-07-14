@@ -9,12 +9,14 @@ pub struct Address {
     pub reply_to: String,
     pub text: bool,
     pub html: bool,
+    pub forward: bool,
+    pub account_id: String,
 }
 
 impl Address {
     pub async fn from_destination(destination: &str, store: &oneml::aws::Store) -> Result<Option<Address>, Box<dyn Error>> {
         let destination = destination.to_lowercase();
-        println!("matching destination {}", destination);
+        log::debug!("matching destination {}", destination);
         let re = regex::Regex::new(r"^(?P<key>.+)@(?P<prefix>[[:alnum:]]+)\.1-ml\.com$")?;
         let captures = re.captures(destination.as_str());
         if let Some(captures) = captures {
@@ -33,13 +35,26 @@ impl Address {
                                                                           to: account.email.clone(),
                                                                           reply_to: "noreply@1-ml.com".to_string(),
                                                                           text: true,
-                                                                          html: true, })),
+                                                                          html: true, 
+                                                                          forward: true,
+                                                                          account_id: account.user_id,
+                                                                          })),
                           oneml::email::Status::ForwardAsText => Ok(Some(Address { from: destination.clone(), 
                                                                           to: account.email.clone(),
                                                                           reply_to: "noreply@1-ml.com".to_string(),
                                                                           text: true,
-                                                                          html: false, })),
-                          oneml::email::Status::Block => Ok(None),
+                                                                          html: false, 
+                                                                          forward: true,
+                                                                          account_id: account.user_id,
+                                                                          })),
+                          oneml::email::Status::Block => Ok(Some(Address { from: destination.clone(),
+                                                                          to: account.email.clone(),
+                                                                          reply_to: "noreply@1-ml.com".to_string(),
+                                                                          text: true,
+                                                                          html: false, 
+                                                                          forward: false,
+                                                                          account_id: account.user_id,
+                                                                          })),
                       }
                     },
                     oneml::account::Status::Deleted => Ok(None),
@@ -59,7 +74,7 @@ impl Address {
         let mut addresses = Vec::new();
         for e in destinations.iter() {
           if let Some(a) = Address::from_destination(e, store).await? {
-            println!("destination match: {:?}", a);
+            log::debug!("destination match: {:?}", a);
             addresses.push(a);
           }
         }
