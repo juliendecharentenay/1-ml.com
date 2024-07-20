@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 log = "0"
-simple_logger = "5"
+env_logger = "0"
 http = "1"
 lambda_http = "0"
 tokio = { version = "1", features = [ "macros" ] }

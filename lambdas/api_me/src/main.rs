@@ -5,7 +5,7 @@ mod requestapiemail;
 
 #[tokio::main]
 async fn main() -> Result<(), lambda_http::Error> {
-  simple_logger::init_with_level(log::Level::Info)?;
+  env_logger::init();
   lambda_http::run(lambda_http::service_fn(handle)).await?;
   Ok(())
 }
