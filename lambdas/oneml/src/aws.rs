@@ -80,6 +80,15 @@ impl account::Store for Store {
       .map(|a| Some(a))
   }
 
+  async fn is_prefix_used(&self, prefix: &str) -> Result<bool, Box<dyn Error>> {
+    log::info!("Check for prefix {prefix} in database");
+    let prefix_q = self.client.get_item()
+        .table_name(config::Config::PREFIX_TABLE_NAME)
+        .key("Prefix", aws_sdk_dynamodb::types::AttributeValue::S(prefix.to_string()))
+        .send().await?;
+    Ok(prefix_q.item.is_some())
+  }
+
   async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<account::Account>, Box<dyn Error>> {
     log::info!("Get account associated with prefix{:?}", prefix);
     let prefix_q = self.client.get_item()

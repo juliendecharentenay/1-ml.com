@@ -1,3 +1,5 @@
+use super::*;
+
 use lambda_http::RequestExt;
 use async_trait::async_trait;
 
@@ -61,14 +63,14 @@ impl Handler {
       let path = context.resource_path.as_ref().ok_or("Unable to retrieve resource path")?;
       match context.http_method {
         lambda_http::http::Method::GET if regex::Regex::new(r"^/api/me$")?.is_match(path) 
-          => Ok(Box::new(crate::requestapime::Get::default())),
+          => Ok(Box::new(requestapime::Get::default())),
         lambda_http::http::Method::PATCH if regex::Regex::new(r"^/api/me$")?.is_match(path) 
-          => Ok(Box::new(crate::requestapime::Patch::default())),
+          => Ok(Box::new(requestapime::Patch::default())),
 
         lambda_http::http::Method::GET if regex::Regex::new(r"^/api/email$")?.is_match(path) 
-          => Ok(Box::new(crate::requestapiemail::Get::default())),
+          => Ok(Box::new(requestapiemail::Get::default())),
         lambda_http::http::Method::PATCH if regex::Regex::new(r"^/api/email/.*$")?.is_match(path) 
-          => Ok(Box::new(crate::requestapiemail::Patch::default())),
+          => Ok(Box::new(requestapiemail::Patch::default())),
 
         _ => Err(format!("Unable to match method {} on path {}", context.http_method, path).into()),
       }

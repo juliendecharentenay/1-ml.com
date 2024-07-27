@@ -108,6 +108,7 @@ impl Account {
 #[async_trait]
 pub trait Store {
   async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>, Box<dyn Error>>;
+  async fn is_prefix_used(&self, prefix: &str) -> Result<bool, Box<dyn Error>>;
   async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>, Box<dyn Error>>;
   async fn put_account(&self, account: Account) -> Result<Account, Box<dyn Error>>;
   async fn update_account(&self, account: Account) -> Result<Account, Box<dyn Error>>;
@@ -121,7 +122,7 @@ impl Account {
     let mut updated = false;
     if let Some(prefix) = update.get("prefix") {
       if regex::Regex::new(r"^[a-zA-Z0-9]+$")?.is_match(prefix) {
-        if store.get_account_from_prefix(prefix).await?.is_none() {
+        if ! store.is_prefix_used(prefix).await? {
           account.prefix = Some(prefix.to_lowercase());
           updated = true;
         } else {
