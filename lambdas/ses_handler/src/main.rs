@@ -25,11 +25,7 @@ async fn handle_f(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Er
       },
       Err(e)   => {
           log::error!("An error occured: {:?}", e);
-          if let Some(topic_arn) = aws::config::Config::topic_arn() {
-            let _ = oneml::sns_notify(topic_arn, format!("{e:?}"));
-          } else {
-            log::warn!("Environment variable SNS_TOPIC_ARN is not set");
-          }
+          oneml::sns_notify(format!("{e:?}"));
           Err(e)
       },
    }

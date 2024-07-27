@@ -15,13 +15,7 @@ async fn handle(event: lambda_http::Request) -> Result<lambda_http::Response<Str
     Ok(r) => Ok(r),
     Err(e) => {
       log::error!("Error: {e:?}");
-      if let Ok(topic_arn) = std::env::var("SNS_TOPIC_ARN") {
-        if let Err(e) = oneml::sns_notify(topic_arn, format!("{e:#?}")) {
-          log::error!("sns_notify error: {e:?}");
-        }
-      } else {
-        log::warn!("No topic ARN provided. Please create topic arn and set environment variable SNS_TOPIC_ARN");
-      }
+      oneml::sns_notify(format!("{e:#?}"));
       let r = oneml::response::InternalServerError { message: e.to_string() };
       let r = lambda_http::Response::builder()
         .status(lambda_http::http::StatusCode::INTERNAL_SERVER_ERROR)
