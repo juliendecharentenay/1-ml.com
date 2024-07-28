@@ -13,9 +13,3 @@ pub use identity::{Identity, IdentityBuilder};
 
 pub use derive_sql;
 
-
-/// Retrieve a connection to the database
-pub fn get_database_connection() -> error::Result<rusqlite::Connection> {
-  Ok(rusqlite::Connection::open_in_memory()?)
-}
-

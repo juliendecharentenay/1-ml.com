@@ -41,9 +41,9 @@ async fn handle(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Erro
     let store = map_err(oneml::aws::Store::default().await)?;
 
     use oneml::derive_sql::traits::{Table, Insert};
-    let mut conn = map_err(oneml::get_database_connection())?;
+    let mut conn = map_err(oneml::db::connection())?;
     let db_conn  = &mut conn;
-    let email_db = oneml::db::SqlEmail::default();
+    let email_db = oneml::db::tables::SqlEmail::default();
     map_err(email_db.create_if_not_exist(db_conn))?;
 
     log::debug!("store object created");
@@ -57,8 +57,8 @@ async fn handle(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Erro
       }
 
       log::debug!("Record new entry in database");
-      let email = oneml::db::Email::from_id_message_id_subject_from_to_forwarded(address.account_id,
-        ses_event.message_id.clone(), ses_event.subject.clone(), ses_event.source.clone(), address.from, address.forward);
+      let email = oneml::db::tables::Email::from_id_message_id_subject_from_to_forwarded(address.account_id.as_str(),
+        ses_event.message_id.as_str(), ses_event.subject.as_str(), ses_event.source.as_str(), address.from.as_str(), address.forward);
       map_err(email_db.insert(db_conn, &email))?;
       log::debug!("Database entry recorded");
     }
