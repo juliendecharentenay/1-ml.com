@@ -88,7 +88,7 @@ impl Mail {
         let r = mailparse::parse_mail(content.as_bytes())?;
         let subject = r.headers.get_first_value("Subject");
         match r.ctype.mimetype.as_str() {
-            "multipart/alternative" => {
+            "multipart/alternative" | "multipart/mixed" => {
                 Ok((subject, 
                     r.subparts.iter().find(|i| i.ctype.mimetype.eq("text/plain")).map(|p| p.get_body().unwrap_or_else(|_| "Unavailable".to_string())),
                     r.subparts.iter().find(|i| i.ctype.mimetype.eq("text/html")).map(|p| p.get_body().unwrap_or_else(|_| "Unavailable".to_string()))))
