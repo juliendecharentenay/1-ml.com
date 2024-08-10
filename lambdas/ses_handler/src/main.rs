@@ -9,6 +9,7 @@ mod address;
 mod mail;
 mod sesevent;
 mod aws;
+mod error; pub use error::{Error, MyResult};
 
 #[tokio::main]
 async fn main() -> Result<(), lambda_runtime::Error> {

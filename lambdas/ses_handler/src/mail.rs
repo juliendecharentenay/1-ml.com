@@ -1,7 +1,5 @@
-use std::{
-    error::Error,
-    str,
-};
+use super::*;
+
 use simple_error::SimpleError;
 use mailparse::MailHeaderMap;
 use crate::aws::config::Config;
@@ -14,11 +12,11 @@ pub struct Mail {
 }
 
 impl Mail {
-    pub fn from(message_id: String) -> Result<Mail, Box<dyn Error>> {
+    pub fn from(message_id: String) -> Result<Mail, Box<dyn std::error::Error>> {
         Ok( Mail { config: None, client: None, message: None, message_id } )
     }
 
-    pub async fn send(&mut self, from: &str, to: &str, reply_to: &str, send_text: bool, send_html: bool) -> Result<(), Box<dyn Error>> {
+    pub async fn send(&mut self, from: &str, to: &str, reply_to: &str, send_text: bool, send_html: bool) -> Result<(), Box<dyn std::error::Error>> {
         if self.config.is_none() {
             self.config = Some(aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await);
         }
@@ -35,7 +33,7 @@ impl Mail {
                 .collect()
                 .await?;
 
-            let (subject, text, html) = Mail::parse_eml(str::from_utf8(s3_message.into_bytes().as_ref())?)?;
+            let (subject, text, html) = Mail::parse_eml(std::str::from_utf8(s3_message.into_bytes().as_ref())?)?;
             self.message = Some(aws_sdk_ses::types::Message::builder()
                 .subject(
                     aws_sdk_ses::types::Content::builder()
@@ -84,7 +82,7 @@ impl Mail {
 impl Mail {
     ///
     /// Parse eml file into a tuple ( subject, plain text, html )
-    fn parse_eml(content: &str) -> Result<(Option<String>, Option<String>, Option<String>), Box<dyn Error>> {
+    fn parse_eml(content: &str) -> MyResult<(Option<String>, Option<String>, Option<String>)> {
         let r = mailparse::parse_mail(content.as_bytes())?;
         let subject = r.headers.get_first_value("Subject");
         match r.ctype.mimetype.as_str() {
@@ -95,7 +93,7 @@ impl Mail {
             },
             "text/plain" => Ok((subject, Some(r.get_body()?), None)),
             "text/html" => Ok((subject,  None, Some(r.get_body()?))),
-            _ => Err(Box::new(SimpleError::new(format!("mimetype {} is not supported", r.ctype.mimetype).as_str()))),
+            _ => Err(Error::UnsupportedMimetype{ ty: r.ctype.mimetype.to_string() }),
         }
     }
 }
@@ -106,7 +104,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_parse_email() -> Result<(), Box<dyn Error>> {
+    fn it_parse_email() -> Result<(), Box<dyn std::error::Error>> {
         let content = eml_content();
         let (subject, plain, html) = Mail::parse_eml(content)?;
         assert!(subject.unwrap().trim().eq("Testing impl"));
@@ -116,7 +114,7 @@ mod tests {
     }
 
     #[test]
-    fn mailparse_parse_email() -> Result<(), Box<dyn Error>> {
+    fn mailparse_parse_email() -> Result<(), Box<dyn std::error::Error>> {
         let content = eml_content();
         let m = mailparse::parse_mail(content.as_bytes())?;
         log::debug!("it_parse_email: content_type {:?}",m.ctype);
