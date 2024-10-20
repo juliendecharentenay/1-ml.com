@@ -4,6 +4,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+  #[error("Empty request body")]
+  EmptyRequestBody,
   #[error(transparent)]
   IdentityBuilderError(#[from] IdentityBuilderError),
   #[error(transparent)]

@@ -14,4 +14,5 @@ mod identity;
 pub use identity::{Identity, IdentityBuilder, IdentityBuilderError};
 
 pub use derive_sql;
+pub use serde;
 

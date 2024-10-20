@@ -19,13 +19,13 @@ pub mod mock {
   #[derive(Default, derive_builder::Builder)]
   #[builder(pattern = "owned")]
   #[builder(setter(prefix = "set"))]
-  pub struct StoreMock {
+  pub struct AccountStoreMock {
     #[builder(default)]
     pub accounts: Mutex<Vec<constructs::Account>>,
   }
 
   #[async_trait::async_trait]
-  impl AccountStore for StoreMock {
+  impl AccountStore for AccountStoreMock {
     async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<constructs::Account>> {
       Ok(self.accounts
              .lock().map_err(|e| format!("{}", e))?

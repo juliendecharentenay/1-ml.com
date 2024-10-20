@@ -59,6 +59,10 @@ pub struct Account {
 }
 
 impl Account {
+  pub fn from_userid_prefix_email_status_datecreated(user_id: &str, prefix: &str, email: &str, status: Status, date_created: chrono::DateTime<chrono::Utc>) -> Account {
+    Account { user_id: user_id.to_string(), prefix: Some(prefix.to_string()), email: email.to_string(), status, date_created }
+  }
+
   pub fn new(user_id: String, prefix: Option<String>, email: String, status: Status, date_created: chrono::DateTime<chrono::Utc>) -> Result<Account> {
     Ok( Account { user_id, prefix, email, status, date_created } )
   }
@@ -111,8 +115,9 @@ impl Account {
     let mut account = Account::from_identity(identity, store).await?;
     let mut updated = false;
     if let Some(prefix) = update.get("prefix") {
-      if regex::Regex::new(r"^[a-zA-Z0-9]+$")?.is_match(prefix) {
-        if ! store.is_prefix_used(prefix).await? {
+      let prefix = prefix.to_lowercase();
+      if regex::Regex::new(r"^[a-z0-9_]+$")?.is_match(prefix.as_str()) {
+        if ! store.is_prefix_used(prefix.as_str()).await? {
           account.prefix = Some(prefix.to_lowercase());
           updated = true;
         } else {
@@ -160,12 +165,12 @@ impl Account {
 #[cfg(test)]
 mod account {
   use super::*;
-  use traits::store::account::mock::StoreMockBuilder;
+  use traits::store::account::mock::AccountStoreMockBuilder;
 
   #[tokio::test]
   async fn it_handles_request_with_store() -> Result<()> {
     let active_account = Account::make_active_account(); let deleted_account = Account::make_deleted_account();
-    let store = StoreMockBuilder::default()
+    let store = AccountStoreMockBuilder::default()
                 .set_accounts(std::sync::Mutex::new(vec![active_account.clone(), deleted_account.clone()]))
                 .build().unwrap();
     let a = Account::from_prefix("None", &store).await?;

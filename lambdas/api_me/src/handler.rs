@@ -58,6 +58,16 @@ impl Handler {
 }
 
 impl Handler {
+  pub fn body<T>(&self) -> Result<T, oneml::Error>
+  where T: serde::de::DeserializeOwned,
+  {
+    if let lambda_http::Body::Text(body) = self.event.body() {
+      Ok(serde_json::from_str(body.as_str())?)
+    } else {
+      Err(oneml::Error::EmptyRequestBody)
+    }
+  }
+
   pub async fn run_v2(&self) -> Result<lambda_http::Response<String>, oneml::Error> {
     log::info!("Event: {:?}", self.event);
     log::info!("Lambda context: {:?}", self.event.lambda_context());
@@ -79,7 +89,7 @@ impl Handler {
         "/api/me" if matches!(context.http_method, lambda_http::http::Method::PATCH)
         => oneml::api::Request::Authenticated { 
           identity: identity.ok_or("Unauthenticated request")?,
-          request: oneml::api::AuthenticatedRequest::PatchMe,
+          request: oneml::api::AuthenticatedRequest::PatchMe(self.body()?),
         },
 
         "/api/email" if matches!(context.http_method, lambda_http::http::Method::GET)
