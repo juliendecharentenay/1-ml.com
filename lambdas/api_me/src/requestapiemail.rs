@@ -16,7 +16,7 @@ impl handler::Request for Get {
               identity: oneml::Identity) -> Result<(http::StatusCode, String), Box<dyn std::error::Error>> {
     log::info!("ApiEmailGet: Load emails");
     let store = oneml::aws::Store::default().await?;
-    let email_list = oneml::email::Email::list_from_identity(&identity, &store).await?;
+    let email_list = oneml::constructs::email::Email::list_from_identity(&identity, &store).await?;
     Ok((http::StatusCode::OK, serde_json::to_string(&email_list)?))
   }
 }
@@ -36,7 +36,7 @@ impl handler::Request for Patch {
     log::info!("ApiEmailUdPatch: Update email");
     let email = event.path_parameters().first("email").map(urlencoding::decode).ok_or("Unable to retrieve email path parameter")??.to_string();
     let store = oneml::aws::Store::default().await?;
-    let email = oneml::email::Email::update_from_identity(&identity, &store, email, serde_json::from_str(body)?).await?;
+    let email = oneml::constructs::email::Email::update_from_identity(&identity, &store, email, serde_json::from_str(body)?).await?;
     Ok((http::StatusCode::OK, serde_json::to_string(&email)?))
   }
 }

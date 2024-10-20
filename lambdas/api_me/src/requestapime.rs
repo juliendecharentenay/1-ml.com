@@ -15,7 +15,7 @@ impl handler::Request for Get {
               identity: oneml::Identity) -> Result<(http::StatusCode, String), Box<dyn std::error::Error>> {
     log::info!("ApiMeGet:: Load account");
     let store = oneml::aws::Store::default().await?;
-    let account = oneml::account::Account::from_identity(&identity, &store).await?;
+    let account = oneml::constructs::account::Account::from_identity(&identity, &store).await?;
     Ok((http::StatusCode::OK, serde_json::to_string(&account)?))
   }
 }
@@ -34,7 +34,7 @@ impl handler::Request for Patch {
                 body: &String) -> Result<(http::StatusCode, String), Box<dyn std::error::Error>> {
     log::info!("ApiMePatch: Update account");
     let store = oneml::aws::Store::default().await?;
-    let account = oneml::account::Account::update_from_identity(&identity, &store, serde_json::from_str(body)?).await?;
+    let account = oneml::constructs::account::Account::update_from_identity(&identity, &store, serde_json::from_str(body)?).await?;
     Ok((http::StatusCode::OK, serde_json::to_string(&account)?))
   }
 }

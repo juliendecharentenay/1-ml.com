@@ -22,16 +22,16 @@ impl Address {
         if let Some(captures) = captures {
           if let Some(prefix) = captures.name("prefix") {
               let prefix = prefix.as_str().to_lowercase();
-              match oneml::account::Account::from_prefix(prefix.as_str(), store).await? {
+              match oneml::constructs::account::Account::from_prefix(prefix.as_str(), store).await? {
                 Some(account) => {
                   match account.status {
-                    oneml::account::Status::Active => {
-                      let email = match oneml::email::Email::from_address(destination.as_str(), store).await? {
+                    oneml::constructs::account::Status::Active => {
+                      let email = match oneml::constructs::email::Email::from_address(destination.as_str(), store).await? {
                         Some(email) => email,
-                        None => oneml::email::Email::new(destination.clone(), account.user_id.clone())?.save(store).await?,
+                        None => oneml::constructs::email::Email::new(destination.clone(), account.user_id.clone())?.save(store).await?,
                       };
                       match email.status {
-                          oneml::email::Status::Forward => Ok(Some(Address { from: destination.clone(), 
+                          oneml::constructs::email::Status::Forward => Ok(Some(Address { from: destination.clone(), 
                                                                           to: account.email.clone(),
                                                                           reply_to: "noreply@1-ml.com".to_string(),
                                                                           text: true,
@@ -39,7 +39,7 @@ impl Address {
                                                                           forward: true,
                                                                           account_id: account.user_id,
                                                                           })),
-                          oneml::email::Status::ForwardAsText => Ok(Some(Address { from: destination.clone(), 
+                          oneml::constructs::email::Status::ForwardAsText => Ok(Some(Address { from: destination.clone(), 
                                                                           to: account.email.clone(),
                                                                           reply_to: "noreply@1-ml.com".to_string(),
                                                                           text: true,
@@ -47,7 +47,7 @@ impl Address {
                                                                           forward: true,
                                                                           account_id: account.user_id,
                                                                           })),
-                          oneml::email::Status::Block => Ok(Some(Address { from: destination.clone(),
+                          oneml::constructs::email::Status::Block => Ok(Some(Address { from: destination.clone(),
                                                                           to: account.email.clone(),
                                                                           reply_to: "noreply@1-ml.com".to_string(),
                                                                           text: true,
@@ -57,7 +57,7 @@ impl Address {
                                                                           })),
                       }
                     },
-                    oneml::account::Status::Deleted => Ok(None),
+                    oneml::constructs::account::Status::Deleted => Ok(None),
                   }
                 },
                 None => Ok(None),

@@ -4,7 +4,6 @@ use std::{
   collections::HashMap,
 };
 use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
 #[cfg(test)]
 use chrono::TimeZone;
 
@@ -83,7 +82,7 @@ impl Account {
       prefix: Some("active".to_string()),
       email: "active@user.com".to_string(),
       status: Status::Active,
-      date_created: chrono::prelude::Utc.ymd(2022, 1, 15).and_hms(8, 0, 0)
+      date_created: chrono::prelude::Utc.with_ymd_and_hms(2022, 1, 15, 8, 0, 0).unwrap(),
     }
   }
 
@@ -93,7 +92,7 @@ impl Account {
       prefix: Some("deleted".to_string()),
       email: "deleted@user.com".to_string(),
       status: Status::Deleted,
-      date_created: chrono::prelude::Utc.ymd(2022, 1, 15).and_hms(8, 0, 0)
+      date_created: chrono::prelude::Utc.with_ymd_and_hms(2022, 1, 15, 8, 0, 0).unwrap(),
     }
   }
 
@@ -106,19 +105,9 @@ impl Account {
   }
 }
 
-#[async_trait]
-pub trait Store {
-  async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>>;
-  async fn is_prefix_used(&self, prefix: &str) -> Result<bool>;
-  async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>>;
-  async fn put_account(&self, account: Account) -> Result<Account>;
-  async fn update_account(&self, account: Account) -> Result<Account>;
-  async fn delete_account(&self, user_id: &str) -> Result<Account>;
-}
-
 impl Account {
   pub async fn update_from_identity<T>(identity: &Identity, store: &T, update: HashMap<String, String>) -> Result<Account>
-  where T: Store {
+  where T: traits::store::AccountStore {
     let mut account = Account::from_identity(identity, store).await?;
     let mut updated = false;
     if let Some(prefix) = update.get("prefix") {
@@ -144,12 +133,12 @@ impl Account {
 
 impl Account {
   pub async fn from_prefix<T>(prefix: &str, store: &T) -> Result<Option<Account>>
-  where T: Store {
+  where T: traits::store::AccountStore {
     store.get_account_from_prefix(prefix).await
   }
 
   pub async fn from_identity<T>(identity: &Identity, store: &T) -> Result<Account>
-  where T: Store {
+  where T: traits::store::AccountStore {
     log::info!("Make account from identity {:?}", identity);
     if identity.email.is_none() || (! identity.email_verified.unwrap_or_else(|| false)) {
       return Err("Unable to make account from identity: email is not available or not verified".into());
@@ -171,75 +160,13 @@ impl Account {
 #[cfg(test)]
 mod account {
   use super::*;
-  use std::sync::Mutex;
-  use std::cell::RefCell;
-  // use derive_builder::Builder;
-  // use crate::IdentityBuilder;
+  use traits::store::account::mock::StoreMockBuilder;
 
-  #[derive(Default, derive_builder::Builder)]
-  #[builder(pattern = "owned")]
-  #[builder(setter(prefix = "set"))]
-  struct StoreMock {
-    #[builder(default)]
-    pub accounts: Mutex<Vec<Account>>,
-  }
-
-  #[async_trait]
-  impl Store for StoreMock {
-    async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>> {
-      Ok(self.accounts
-             .lock().map_err(|e| format!("{}", e))?
-             .iter()
-             .find(|a| a.user_id.eq(user_id) )
-             .map(|a| a.clone())
-        )
-    }
-
-    async fn is_prefix_used(&self, prefix: &str) -> Result<bool> {
-      self.get_account_from_prefix(prefix).await
-      .map(|o| o.is_some())
-    }
-
-    async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>> {
-      Ok(self.accounts
-             .lock().map_err(|e| format!("{}", e))?
-             .iter()
-             .find(|a| { if let Some(p) = &a.prefix { p.eq(prefix) } else { false } })
-             .map(|a| a.clone())
-        )
-    }
-
-    async fn put_account(&self, account: Account) -> Result<Account> {
-      self.accounts.lock().map_err(|e| format!("{}", e))?.push(account.clone());
-      Ok(account)
-    }
-
-    async fn update_account(&self, account: Account) -> Result<Account> {
-      let mut accounts = self.accounts.lock().map_err(|e| format!("{}", e))?;
-      let a: &mut Account  = accounts
-          .iter_mut()
-          .find(|a| a.user_id.eq(account.user_id.as_str()))
-          .ok_or_else(|| format!("Unable to find account with user_id {}", account.user_id))?;
-      a.update(account);
-      Ok(a.clone())
-    }
-
-    async fn delete_account(&self, user_id: &str) -> Result<Account> {
-      let mut accounts = self.accounts.lock().map_err(|e| format!("{}", e))?;
-      let mut account = accounts
-          .iter_mut()
-          .find(|a| a.user_id.eq(user_id))
-          .ok_or_else(|| format!("Unable to find account with user_id {}", user_id))?;
-      account.status = Status::Deleted;
-      Ok(account.clone())
-    }
-  }
-  
   #[tokio::test]
   async fn it_handles_request_with_store() -> Result<()> {
     let active_account = Account::make_active_account(); let deleted_account = Account::make_deleted_account();
     let store = StoreMockBuilder::default()
-                .set_accounts(Mutex::new(vec![active_account.clone(), deleted_account.clone()]))
+                .set_accounts(std::sync::Mutex::new(vec![active_account.clone(), deleted_account.clone()]))
                 .build().unwrap();
     let a = Account::from_prefix("None", &store).await?;
     assert!(a.is_none());

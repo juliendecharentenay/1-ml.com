@@ -6,8 +6,6 @@ use std::{
 use async_trait::async_trait;
 // use futures_util::StreamExt;
 
-use crate::{account, email};
-
 mod config;
 
 pub struct Store { 
@@ -24,7 +22,7 @@ impl Store {
 
 impl Store {
     fn queries_to_account(user_item: HashMap<String, aws_sdk_dynamodb::types::AttributeValue>, 
-                          prefix_item: Option<HashMap<String, aws_sdk_dynamodb::types::AttributeValue>>) -> Result<account::Account> {
+                          prefix_item: Option<HashMap<String, aws_sdk_dynamodb::types::AttributeValue>>) -> Result<constructs::Account> {
       let user_id = user_item.get("UserId").ok_or("Retrieved item does not contain field UserId")?
                   .as_s().map_err(|_| Error::DynamodbConversion { field: "UserId" })?.to_string();
       let email   = user_item.get("Email").ok_or("Retrieved item does not contain field Email")?
@@ -34,19 +32,19 @@ impl Store {
                   .parse::<chrono::DateTime<chrono::Utc>>()?;
       let status  = user_item.get("Status").ok_or("Retrieved item does not contain field Status")?
                   .as_s().map_err(|_| Error::DynamodbConversion { field: "Status" })?;
-      let status  = account::Status::from_str(status)?;
+      let status  = constructs::account::Status::from_str(status)?;
       let prefix = match prefix_item {
           Some(item) => Some(item.get("Prefix").ok_or("Retrieved item does not contain field Prefix")?
               .as_s().map_err(|_| Error::DynamodbConversion { field: "Prefix" })?.to_string()),
           None => None,
       };
-      Ok(account::Account::new(user_id, prefix, email, status, date_created)?)
+      Ok(constructs::Account::new(user_id, prefix, email, status, date_created)?)
     }
 }
 
 #[async_trait]
-impl account::Store for Store {
-  async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<account::Account>> {
+impl traits::store::AccountStore for Store {
+  async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<constructs::Account>> {
     log::info!("Get account for user id: {}", user_id);
     let user_q = self.client.get_item()
             .table_name(config::Config::USER_TABLE_NAME)
@@ -92,7 +90,7 @@ impl account::Store for Store {
     Ok(prefix_q.item.is_some())
   }
 
-  async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<account::Account>> {
+  async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<constructs::Account>> {
     log::info!("Get account associated with prefix{:?}", prefix);
     let prefix_q = self.client.get_item()
         .table_name(config::Config::PREFIX_TABLE_NAME)
@@ -117,9 +115,9 @@ impl account::Store for Store {
       .map(|a| Some(a))
   }
 
-  async fn put_account(&self, account: account::Account) -> Result<account::Account> {
+  async fn put_account(&self, account: constructs::Account) -> Result<constructs::Account> {
     log::info!("Store account {:?}", account);
-    let status = account::Status::to_str(&account.status)?;
+    let status = constructs::account::Status::to_str(&account.status)?;
     let r = self.client.put_item()
       .table_name(config::Config::USER_TABLE_NAME)
       .condition_expression("attribute_not_exists(UserId)")
@@ -136,9 +134,9 @@ impl account::Store for Store {
     Ok(account)
   }
 
-  async fn update_account(&self, account: account::Account) -> Result<account::Account> {
+  async fn update_account(&self, account: constructs::Account) -> Result<constructs::Account> {
     log::info!("Update account {:?}", account);
-    let status = account::Status::to_str(&account.status)?;
+    let status = constructs::account::Status::to_str(&account.status)?;
     let _user_q = self.client.put_item()
          .table_name(config::Config::USER_TABLE_NAME)
          .condition_expression("attribute_exists(UserId)")
@@ -199,7 +197,7 @@ impl account::Store for Store {
   }
 */
 
-  async fn delete_account(&self, user_id: &str) -> Result<account::Account> {
+  async fn delete_account(&self, user_id: &str) -> Result<constructs::Account> {
     log::info!("Delete account associated with user id {}", user_id);
     let user_query = self.client.delete_item()
           .table_name(config::Config::USER_TABLE_NAME)
@@ -227,23 +225,23 @@ impl account::Store for Store {
 }
 
 impl Store {
-  fn query_to_email(item: HashMap<String, aws_sdk_dynamodb::types::AttributeValue>) -> Result<email::Email> {
+  fn query_to_email(item: HashMap<String, aws_sdk_dynamodb::types::AttributeValue>) -> Result<constructs::Email> {
     let user_id = item.get("UserId").ok_or("Retrieved item does not contain field UserId")?
                   .as_s().map_err(|_| Error::DynamodbConversion { field: "UserId" })?.to_string();
     let email   = item.get("Email").ok_or("Retrieved item does not contain field Email")?
                   .as_s().map_err(|_| Error::DynamodbConversion { field: "Email" })?.to_string();
     let status  = item.get("Status").ok_or("Retrieved item does not contain field Status")?
                   .as_s().map_err(|_| Error::DynamodbConversion { field: "Status" })?;
-    let status  = email::Status::from_str(status)?;
-    Ok( email::Email::new(email, user_id)?.status(status)? )
+    let status  = constructs::email::Status::from_str(status)?;
+    Ok( constructs::Email::new(email, user_id)?.status(status)? )
   }
 }
 
 #[async_trait]
-impl email::Store for Store {
-  async fn save_email(&self, email: email::Email) -> Result<email::Email> {
+impl traits::store::EmailStore for Store {
+  async fn save_email(&self, email: constructs::Email) -> Result<constructs::Email> {
     log::info!("Save email");
-    let status = email::Status::to_str(&email.status)?;
+    let status = constructs::email::Status::to_str(&email.status)?;
     let _email_q = self.client.put_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
         .condition_expression("attribute_not_exists(Email)")
@@ -254,7 +252,7 @@ impl email::Store for Store {
     Ok(email)
   }
 
-  async fn email_list_from_user_id(&self, user_id: &str) -> Result<Vec<email::Email>> {
+  async fn email_list_from_user_id(&self, user_id: &str) -> Result<Vec<constructs::Email>> {
     log::info!("List emails for user {}", user_id);
     let mut email_q = self.client.query()
        .table_name(config::Config::EMAIL_TABLE_NAME)
@@ -277,9 +275,9 @@ impl email::Store for Store {
     Ok(email_list)
   }
 
-  async fn update_email(&self, email: email::Email) -> Result<email::Email> {
+  async fn update_email(&self, email: constructs::Email) -> Result<constructs::Email> {
     log::info!("Update email");
-    let status = email::Status::to_str(&email.status)?;
+    let status = constructs::email::Status::to_str(&email.status)?;
     let _email_q = self.client.put_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
         .condition_expression("attribute_exists(Email) AND attribute_exists(UserId)")
@@ -290,7 +288,7 @@ impl email::Store for Store {
     Ok(email)
   }
 
-  async fn from_address(&self,  email_address: &str) -> Result<Option<email::Email>> {
+  async fn from_address(&self,  email_address: &str) -> Result<Option<constructs::Email>> {
     let email_q = self.client.get_item()
         .table_name(config::Config::EMAIL_TABLE_NAME)
         .key("Email", aws_sdk_dynamodb::types::AttributeValue::S(email_address.to_string()))

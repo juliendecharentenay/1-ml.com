@@ -94,6 +94,11 @@ impl Handler {
           request: oneml::api::AuthenticatedRequest::PatchEmail,
         },
 
+        "/api/ok" if matches!(context.http_method, lambda_http::http::Method::GET)
+        => oneml::api::Request::Unauthenticated {
+          request: oneml::api::UnauthenticatedRequest::Ok,
+        },
+
         _ => return Err("Request unknown".into()),
       };
 

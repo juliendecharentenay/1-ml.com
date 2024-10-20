@@ -15,6 +15,9 @@ pub struct Identity {
 }
 
 impl Identity {
+  pub fn from_id_username_email_emailverified(id: &str, username: &str, email: &str, email_verified: bool) -> Identity {
+    Identity { id: id.to_string(), username: username.to_string(), email: Some(email.to_string()), email_verified: Some(email_verified) }
+  }
   pub fn set_id(mut self, id: &str) -> Identity { self.id = id.to_string(); self }
   pub fn set_username(mut self, username: &str) -> Identity { self.username = username.to_string(); self }
   pub fn set_email(mut self, email: &str) -> Identity { self.email = Some(email.to_string()); self }

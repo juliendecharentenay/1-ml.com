@@ -4,9 +4,8 @@ use std::{
   collections::HashMap,
 };
 use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum Status {
   Forward,
   ForwardAsText,
@@ -31,7 +30,7 @@ impl Status {
   }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Email {
   pub email: String,
   pub user_id: String,
@@ -46,34 +45,29 @@ impl Email {
     self.status = status;
     Ok(self)
   }
-}
-
-#[async_trait]
-pub trait Store {
-  async fn email_list_from_user_id(&self, user_id: &str) -> Result<Vec<Email>>;
-  async fn update_email(&self, email: Email) -> Result<Email>;
-  async fn from_address(&self, email_address: &str) -> Result<Option<Email>>;
-  async fn save_email(&self, email: Email) -> Result<Email>;
+  pub fn from_email_userid_status(email: &str, user_id: &str, status: Status) -> Email {
+    Email { email: email.to_string(), user_id: user_id.to_string(), status }
+  }
 }
 
 impl Email {
   pub async fn save<T>(self, store: &T) -> Result<Email>
-  where T: Store {
+  where T: traits::store::EmailStore {
     store.save_email(self).await
   }
 
   pub async fn from_address<T>(email_address: &str, store: &T) -> Result<Option<Email>>
-  where T: Store {
+  where T: traits::store::EmailStore {
     store.from_address(email_address).await
   }
 
   pub async fn list_from_identity<T>(identity: &Identity, store: &T) -> Result<Vec<Email>>
-  where T: Store {
+  where T: traits::store::EmailStore {
     store.email_list_from_user_id(identity.id.as_str()).await
   }
 
   pub async fn update_from_identity<T>(identity: &Identity, store: &T, email: String, update: HashMap<String, String>) -> Result<Email>
-  where T: Store {
+  where T: traits::store::EmailStore {
     let mut email = Email::new(email, identity.id.clone())?;
     let mut updated = false;
     if let Some(status) = update.get("status") {
