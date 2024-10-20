@@ -11,7 +11,6 @@ doctest = false
 log          = "0"
 serde        = { version = "1", features = [ "derive" ] }
 serde_json   = "1"
-simple-error = "0"
 async-trait  = "0"
 chrono       = { version = "0", features = [ "serde" ] }
 futures-util = "0"
