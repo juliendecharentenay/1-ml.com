@@ -1,10 +1,6 @@
-use std::{
-  error::Error,
-};
-use simple_error::SimpleError;
-use derive_builder::Builder;
+use super::*;
 
-#[derive(Debug, Default, Builder)]
+#[derive(Debug, Default, derive_builder::Builder)]
 #[builder(pattern = "owned")]
 #[builder(setter(prefix = "set"))]
 pub struct Identity {
@@ -26,26 +22,26 @@ impl Identity {
 }
 
 impl Identity {
-  pub fn from_authorizer(value: &serde_json::Value) -> Result<Identity, Box<dyn Error>> {
-    if ! value.is_object() { return Err(Box::new(SimpleError::new(format!("Unable to retrieve valid identity from {:?}", value).as_str()))); }
-    let value = value.as_object().ok_or_else(|| SimpleError::new("Unable to retrieve object"))?;
+  pub fn from_authorizer(value: &serde_json::Value) -> Result<Identity> {
+    if ! value.is_object() { return Err(format!("Unable to retrieve valid identity from {:?}", value).as_str().into()); }
+    let value = value.as_object().ok_or("Unable to retrieve object")?;
 
-    let token_use = value.get("token_use").ok_or_else(|| SimpleError::new("Unable to retrieve token use"))?;
-    if ! token_use.is_string() { return Err(Box::new(SimpleError::new("Unable to retrieve token use value"))); }
-    if token_use.as_str().ok_or_else(|| SimpleError::new("Unable to convert token use to string"))? != "id" {
-      return Err(Box::new(SimpleError::new(format!("Invalid token use value {}", token_use.as_str().unwrap()).as_str())));
+    let token_use = value.get("token_use").ok_or("Unable to retrieve token use")?;
+    if ! token_use.is_string() { return Err("Unable to retrieve token use value".into()); }
+    if token_use.as_str().ok_or("Unable to convert token use to string")? != "id" {
+      return Err(format!("Invalid token use value {}", token_use.as_str().unwrap()).as_str().into());
     }
 
-    let id = value.get("sub").ok_or_else(|| SimpleError::new("Unable to retrieve id"))?;
-    let id = id.as_str().ok_or_else(|| SimpleError::new("Unable to convert id to string"))?.to_string();
+    let id = value.get("sub").ok_or("Unable to retrieve id")?;
+    let id = id.as_str().ok_or("Unable to convert id to string")?.to_string();
 
-    let username = value.get("cognito:username").ok_or_else(|| SimpleError::new("Unable to retrieve username"))?;
-    let username = username.as_str().ok_or_else(|| SimpleError::new("Unable to convert username to string"))?.to_string();
+    let username = value.get("cognito:username").ok_or("Unable to retrieve username")?;
+    let username = username.as_str().ok_or("Unable to convert username to string")?.to_string();
 
     let email = match value.get("email") {
       Some(v) => {
         if v.is_string() {
-          Some(v.as_str().ok_or_else(|| SimpleError::new("Unable to convert email to string"))?.to_string())
+          Some(v.as_str().ok_or("Unable to convert email to string")?.to_string())
         } else {
           None
         }
@@ -56,7 +52,7 @@ impl Identity {
     let email_verified = match value.get("email_verified") {
       Some(v) => {
         if v.is_string() {
-          Some(v.as_str().ok_or_else(|| SimpleError::new("Unable to convert email_verified to string"))? == "true")
+          Some(v.as_str().ok_or("Unable to convert email_verified to string")? == "true")
         } else {
           None
         }
@@ -73,7 +69,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn from_authorizer_works() -> Result<(), Box<dyn Error>> {
+    fn from_authorizer_works() -> Result<()> {
         let data = r#"{
       "aud": "aud123", "auth_time": "1700000000", "cognito:username": "usname", "email": "us@me.com", "email_verified": "true", 
       "event_id": "evtid123", "exp": "Sat Jun 01 20:33:43 UTC 2022", "iat": "Sat Jun 01 19:33:43 UTC 2022", "iss": "https://cognito-idp.eu-west-1.amazonaws.com/eu-east-1_abc", "jti": "jti123", "origin_jti": "origin_jti123", "sub": "sub123", "token_use": "id"

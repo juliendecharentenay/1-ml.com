@@ -1,11 +1,12 @@
+use super::*;
+
 use std::{
-  error::Error,
   collections::HashMap,
 };
 use serde::{Serialize, Deserialize};
-use simple_error::SimpleError;
 use async_trait::async_trait;
-// use chrono::TimeZone;
+#[cfg(test)]
+use chrono::TimeZone;
 
 use crate::Identity;
 
@@ -16,15 +17,15 @@ pub enum Status {
 }
 
 impl Status {
-  pub fn from_str(v: &str) -> Result<Status, Box<dyn Error>> {
+  pub fn from_str(v: &str) -> Result<Status> {
     match v {
       "Active"  => Ok(Status::Active),
       "Deleted" => Ok(Status::Deleted),
-      _         => Err(Box::new(SimpleError::new(format!("{} is not a valid status", v).as_str()))),
+      _         => Err(format!("{} is not a valid status", v).as_str().into()),
     }
   }
 
-  pub fn to_str(status: &Status) -> Result<String, Box<dyn Error>> {
+  pub fn to_str(status: &Status) -> Result<String> {
     match status {
       Status::Active => Ok("Active".to_string()),
       Status::Deleted => Ok("Deleted".to_string()),
@@ -37,7 +38,7 @@ mod status {
   use super::*;
 
   #[test]
-  fn str_conversion() -> Result<(), Box<dyn Error>> {
+  fn str_conversion() -> Result<()> {
     assert!(std::matches!(Status::from_str("Active")?, Status::Active));
     assert!(std::matches!(Status::from_str("Deleted")?, Status::Deleted));
     assert!(Status::from_str("Banana").is_err());
@@ -59,14 +60,14 @@ pub struct Account {
 }
 
 impl Account {
-  pub fn new(user_id: String, prefix: Option<String>, email: String, status: Status, date_created: chrono::DateTime<chrono::Utc>) -> Result<Account, Box<dyn Error>> {
+  pub fn new(user_id: String, prefix: Option<String>, email: String, status: Status, date_created: chrono::DateTime<chrono::Utc>) -> Result<Account> {
     Ok( Account { user_id, prefix, email, status, date_created } )
   }
 
-  fn new_from_identity(identity: &Identity) -> Result<Account, Box<dyn Error>> {
+  fn new_from_identity(identity: &Identity) -> Result<Account> {
     Ok(Account {
          user_id: identity.id.clone(),
-         email: identity.email.as_ref().ok_or_else(|| SimpleError::new("Unable to retrieve email"))?.clone(),
+         email: identity.email.as_ref().ok_or("Unable to retrieve email")?.clone(),
          prefix: None,
          status: Status::Active,
          date_created: chrono::Utc::now(),
@@ -107,16 +108,16 @@ impl Account {
 
 #[async_trait]
 pub trait Store {
-  async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>, Box<dyn Error>>;
-  async fn is_prefix_used(&self, prefix: &str) -> Result<bool, Box<dyn Error>>;
-  async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>, Box<dyn Error>>;
-  async fn put_account(&self, account: Account) -> Result<Account, Box<dyn Error>>;
-  async fn update_account(&self, account: Account) -> Result<Account, Box<dyn Error>>;
-  async fn delete_account(&self, user_id: &str) -> Result<Account, Box<dyn Error>>;
+  async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>>;
+  async fn is_prefix_used(&self, prefix: &str) -> Result<bool>;
+  async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>>;
+  async fn put_account(&self, account: Account) -> Result<Account>;
+  async fn update_account(&self, account: Account) -> Result<Account>;
+  async fn delete_account(&self, user_id: &str) -> Result<Account>;
 }
 
 impl Account {
-  pub async fn update_from_identity<T>(identity: &Identity, store: &T, update: HashMap<String, String>) -> Result<Account, Box<dyn Error>>
+  pub async fn update_from_identity<T>(identity: &Identity, store: &T, update: HashMap<String, String>) -> Result<Account>
   where T: Store {
     let mut account = Account::from_identity(identity, store).await?;
     let mut updated = false;
@@ -126,10 +127,10 @@ impl Account {
           account.prefix = Some(prefix.to_lowercase());
           updated = true;
         } else {
-          return Err(Box::new(SimpleError::new(format!("Prefix {} is already taken.", prefix).as_str())));
+          return Err(format!("Prefix {} is already taken.", prefix).as_str().into());
         }
       } else {
-        return Err(Box::new(SimpleError::new(format!("Prefix {} is invalid. prefix can only contains letters and numbers.", prefix).as_str())));
+        return Err(format!("Prefix {} is invalid. prefix can only contains letters and numbers.", prefix).as_str().into());
       }
     }
 
@@ -142,16 +143,16 @@ impl Account {
 }
 
 impl Account {
-  pub async fn from_prefix<T>(prefix: &str, store: &T) -> Result<Option<Account>, Box<dyn Error>>
+  pub async fn from_prefix<T>(prefix: &str, store: &T) -> Result<Option<Account>>
   where T: Store {
     store.get_account_from_prefix(prefix).await
   }
 
-  pub async fn from_identity<T>(identity: &Identity, store: &T) -> Result<Account, Box<dyn Error>>
+  pub async fn from_identity<T>(identity: &Identity, store: &T) -> Result<Account>
   where T: Store {
     log::info!("Make account from identity {:?}", identity);
     if identity.email.is_none() || (! identity.email_verified.unwrap_or_else(|| false)) {
-      return Err(Box::new(SimpleError::new("Unable to make account from identity: email is not available or not verified")));
+      return Err("Unable to make account from identity: email is not available or not verified".into());
     }
 
     let mut account = store.get_account_from_user_id(identity.id.as_str()).await?;
@@ -163,7 +164,7 @@ impl Account {
       account = Some(store.put_account(a).await?);
     }
     log::info!("Account to be returned: {:?}", account);
-    Ok(account.ok_or_else(|| SimpleError::new("No account were found and we were not able to initialise an account"))?)
+    Ok(account.ok_or("No account were found and we were not able to initialise an account")?)
   }
 }
 
@@ -172,11 +173,10 @@ mod account {
   use super::*;
   use std::sync::Mutex;
   use std::cell::RefCell;
-  use simple_error::SimpleError;
-  use derive_builder::Builder;
-  use crate::IdentityBuilder;
+  // use derive_builder::Builder;
+  // use crate::IdentityBuilder;
 
-  #[derive(Default, Builder)]
+  #[derive(Default, derive_builder::Builder)]
   #[builder(pattern = "owned")]
   #[builder(setter(prefix = "set"))]
   struct StoreMock {
@@ -186,7 +186,7 @@ mod account {
 
   #[async_trait]
   impl Store for StoreMock {
-    async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>, Box<dyn Error>> {
+    async fn get_account_from_user_id(&self, user_id: &str) -> Result<Option<Account>> {
       Ok(self.accounts
              .lock().map_err(|e| format!("{}", e))?
              .iter()
@@ -195,7 +195,12 @@ mod account {
         )
     }
 
-    async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>, Box<dyn Error>> {
+    async fn is_prefix_used(&self, prefix: &str) -> Result<bool> {
+      self.get_account_from_prefix(prefix).await
+      .map(|o| o.is_some())
+    }
+
+    async fn get_account_from_prefix(&self, prefix: &str) -> Result<Option<Account>> {
       Ok(self.accounts
              .lock().map_err(|e| format!("{}", e))?
              .iter()
@@ -204,12 +209,12 @@ mod account {
         )
     }
 
-    async fn put_account(&self, account: Account) -> Result<Account, Box<dyn Error>> {
+    async fn put_account(&self, account: Account) -> Result<Account> {
       self.accounts.lock().map_err(|e| format!("{}", e))?.push(account.clone());
       Ok(account)
     }
 
-    async fn update_account(&self, account: Account) -> Result<Account, Box<dyn Error>> {
+    async fn update_account(&self, account: Account) -> Result<Account> {
       let mut accounts = self.accounts.lock().map_err(|e| format!("{}", e))?;
       let a: &mut Account  = accounts
           .iter_mut()
@@ -219,7 +224,7 @@ mod account {
       Ok(a.clone())
     }
 
-    async fn delete_account(&self, user_id: &str) -> Result<Account, Box<dyn Error>> {
+    async fn delete_account(&self, user_id: &str) -> Result<Account> {
       let mut accounts = self.accounts.lock().map_err(|e| format!("{}", e))?;
       let mut account = accounts
           .iter_mut()
@@ -231,11 +236,11 @@ mod account {
   }
   
   #[tokio::test]
-  async fn it_handles_request_with_store() -> Result<(), Box<dyn Error>> {
+  async fn it_handles_request_with_store() -> Result<()> {
     let active_account = Account::make_active_account(); let deleted_account = Account::make_deleted_account();
     let store = StoreMockBuilder::default()
                 .set_accounts(Mutex::new(vec![active_account.clone(), deleted_account.clone()]))
-                .build()?;
+                .build().unwrap();
     let a = Account::from_prefix("None", &store).await?;
     assert!(a.is_none());
     let a = Account::from_prefix(active_account.prefix.as_ref().unwrap().as_str(), &store).await?
