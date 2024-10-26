@@ -81,5 +81,13 @@ impl Email {
       Ok(email)
     }
   }
+
+  pub async fn update_from_identity_status<T>(identity: &Identity, store: &T, email: &str, status: Status) -> Result<Email>
+  where T: traits::store::EmailStore,
+  {
+    let mut email = Email::new(email.to_string(), identity.id.clone())?;
+    email.status = status;
+    store.update_email(email).await
+  }
 }
 

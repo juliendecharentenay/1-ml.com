@@ -46,7 +46,7 @@ pub struct Handler {
 impl Handler {
   pub fn new(event: lambda_http::Request) -> Handler { Handler { event } }
 
-  pub async fn run(&self) -> Result<lambda_http::Response<String>, Box<dyn std::error::Error>> {
+  pub async fn run_deprec(&self) -> Result<lambda_http::Response<String>, Box<dyn std::error::Error>> {
     log::info!("Event: {:?}", self.event);
     log::info!("Lambda context: {:?}", self.event.lambda_context());
     log::info!("Request context: {:?}", self.event.request_context());
@@ -64,11 +64,11 @@ impl Handler {
     if let lambda_http::Body::Text(body) = self.event.body() {
       Ok(serde_json::from_str(body.as_str())?)
     } else {
-      Err(oneml::Error::EmptyRequestBody)
+      Err(oneml::Error::EmptyRequestTextBody)
     }
   }
 
-  pub async fn run_v2(&self) -> Result<lambda_http::Response<String>, oneml::Error> {
+  pub async fn run(&self) -> Result<lambda_http::Response<String>, oneml::Error> {
     log::info!("Event: {:?}", self.event);
     log::info!("Lambda context: {:?}", self.event.lambda_context());
     log::info!("Request context: {:?}", self.event.request_context());
@@ -101,7 +101,10 @@ impl Handler {
         "/api/email/{email}" if matches!(context.http_method, lambda_http::http::Method::PATCH)
         => oneml::api::Request::Authenticated {
           identity: identity.ok_or("Unauthenticated request")?,
-          request: oneml::api::AuthenticatedRequest::PatchEmail,
+          request: oneml::api::AuthenticatedRequest::PatchEmail {
+            email: self.event.path_parameters().first("email").map(urlencoding::decode).ok_or("Unable to retrieve email")??.to_string(),
+            body: self.body()?,
+          },
         },
 
         "/api/ok" if matches!(context.http_method, lambda_http::http::Method::GET)

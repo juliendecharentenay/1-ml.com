@@ -4,8 +4,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-  #[error("Empty request body")]
-  EmptyRequestBody,
+  #[error("Empty request text body")]
+  EmptyRequestTextBody,
+  #[error(transparent)]
+  FromUtf8Error(#[from] std::string::FromUtf8Error),
   #[error(transparent)]
   IdentityBuilderError(#[from] IdentityBuilderError),
   #[error(transparent)]
