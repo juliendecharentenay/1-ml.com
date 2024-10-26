@@ -1,8 +1,6 @@
 use oneml::serde;
 
 mod handler;
-mod requestapime;
-mod requestapiemail;
 
 #[tokio::main]
 async fn main() -> Result<(), lambda_http::Error> {
