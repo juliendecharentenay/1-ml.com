@@ -9,11 +9,15 @@ pub async fn implementation<T>(store: &T, identity: Identity, email: &str, body:
 where T: traits::store::EmailStore,
 {
   log::info!("[PATCH] ApiEmail");
-  let result = constructs::email::Email::update_from_identity_status(
-    &identity, store, email, body.status).await?;
+  let mut e = store.from_address(email).await?.ok_or(Error::EmailNotFound(email.to_string()))?;
+  if ! e.user_id.eq(identity.id.as_str()) {
+    return Err(Error::InvalidEmailAccount(e.user_id));
+  }
+  e.status = body.status;
+  store.update_email(e.clone()).await?;
   Ok(lambda_http::Response::builder()
      .status(lambda_http::http::StatusCode::OK)
-     .body(serde_json::to_string(&result)?)?)
+     .body(serde_json::to_string(&e)?)?)
 }
 
 #[cfg(test)]
@@ -39,6 +43,11 @@ mod tests {
     assert!(implementation(&store,
       Identity::from_id_username_email_emailverified("u1", "u1 name", "one@home.com", true),
       "two@u1.two.com", Params { status: constructs::email::Status::Forward, },
+    ).await.is_err());
+      
+    assert!(implementation(&store,
+      Identity::from_id_username_email_emailverified("u2", "u2 name", "two@home.com", true),
+      "one@u1.two.com", Params { status: constructs::email::Status::Forward, },
     ).await.is_err());
       
     Ok(())

@@ -4,6 +4,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+  #[error("Email account `{0}` does not match identity account")]
+  InvalidEmailAccount(String),
+  #[error("Email address `{0}` does not exist")]
+  EmailNotFound(String),
   #[error("Empty request text body")]
   EmptyRequestTextBody,
   #[error(transparent)]

@@ -1,8 +1,5 @@
 use super::*;
 
-use std::{
-  collections::HashMap,
-};
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -64,30 +61,6 @@ impl Email {
   pub async fn list_from_identity<T>(identity: &Identity, store: &T) -> Result<Vec<Email>>
   where T: traits::store::EmailStore {
     store.email_list_from_user_id(identity.id.as_str()).await
-  }
-
-  pub async fn update_from_identity<T>(identity: &Identity, store: &T, email: String, update: HashMap<String, String>) -> Result<Email>
-  where T: traits::store::EmailStore {
-    let mut email = Email::new(email, identity.id.clone())?;
-    let mut updated = false;
-    if let Some(status) = update.get("status") {
-      email.status = Status::from_str(status.as_str())?;
-      updated = true;
-    }
-
-    if updated {
-      store.update_email(email).await
-    } else {
-      Ok(email)
-    }
-  }
-
-  pub async fn update_from_identity_status<T>(identity: &Identity, store: &T, email: &str, status: Status) -> Result<Email>
-  where T: traits::store::EmailStore,
-  {
-    let mut email = Email::new(email.to_string(), identity.id.clone())?;
-    email.status = status;
-    store.update_email(email).await
   }
 }
 
