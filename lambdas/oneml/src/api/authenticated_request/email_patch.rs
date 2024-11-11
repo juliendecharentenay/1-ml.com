@@ -30,7 +30,7 @@ mod tests {
       constructs::email::Email::from_email_userid_status("one@u1.two.com", "u1", constructs::email::Status::Forward)
     ).await?;
 
-    let r = implementation(&store,
+    let _ = implementation(&store,
       Identity::from_id_username_email_emailverified("u1", "u1 name", "one@home.com", true),
       "one@u1.two.com", Params { status: constructs::email::Status::Block, },
     ).await?;

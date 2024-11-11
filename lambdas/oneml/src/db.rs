@@ -7,4 +7,8 @@ pub fn connection() -> error::Result<rusqlite::Connection> {
   Ok(rusqlite::Connection::open(file)?)
 }
 
+#[cfg(test)]
+pub fn db_in_memory() -> Result<rusqlite::Connection> {
+  Ok(rusqlite::Connection::open_in_memory()?)
+}
 
