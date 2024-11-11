@@ -1,13 +1,11 @@
 use super::*;
 
-pub async fn implementation<T>(store: &T, identity: Identity, update: std::collections::HashMap<String, String>) -> Result<lambda_http::Response<String>>
+pub async fn implementation<T>(store: &T, identity: Identity, update: std::collections::HashMap<String, String>) -> Result<constructs::Account>
 where T: traits::store::AccountStore,
 {
     log::info!("[PATCH] ApiMe");
     let result = constructs::Account::update_from_identity(&identity, store, update).await?;
-    Ok(lambda_http::Response::builder()
-      .status(lambda_http::http::StatusCode::OK)
-      .body(serde_json::to_string(&result)?)?)
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -33,23 +31,20 @@ mod tests {
     assert!(store.get_account_from_prefix("prefix_u2").await?.is_some());
     
     // Invalid character
-    let r = implementation(&store,
+    assert!(implementation(&store,
       Identity::from_id_username_email_emailverified("u3", "u3 name", "three@home.com", true),
       std::collections::HashMap::from([
         ("prefix".to_string(), "Invalid$".to_string())
       ])
-    ).await;
-    assert!(r.is_err());
+    ).await.is_err());
 
     // Prefix already taken
-    let r = implementation(&store,
+    assert!(implementation(&store,
       Identity::from_id_username_email_emailverified("u4", "u4 name", "four@home.com", true),
       std::collections::HashMap::from([
         ("prefix".to_string(), "prefix_U1".to_string())
       ])
-    ).await;
-    assert!(r.is_err());
-
+    ).await.is_err());
     
     Ok(())
   }

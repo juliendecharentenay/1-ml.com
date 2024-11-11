@@ -1,7 +1,7 @@
 use super::*;
 
 /// Email data structure used in database 
-#[derive(derive_sql::DeriveSqlStatement)]
+#[derive(serde::Serialize, derive_sql::DeriveSqlStatement)]
 pub struct Email {
   id: String,
   message_id: String,

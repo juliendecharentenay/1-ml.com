@@ -1,13 +1,11 @@
 use super::*;
 
-pub async fn implementation<T>(store: &T, identity: Identity) -> Result<lambda_http::Response<String>>
+pub async fn implementation<T>(store: &T, identity: Identity) -> Result<constructs::Account>
 where T: traits::store::AccountStore,
 {
     log::info!("[GET] ApiMe: load account");
     let result = constructs::Account::from_identity(&identity, store).await?;
-    Ok(lambda_http::Response::builder()
-      .status(lambda_http::http::StatusCode::OK)
-      .body(serde_json::to_string(&result)?)?)
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -26,8 +24,6 @@ mod get_me {
     let r = implementation(&store, 
       Identity::from_id_username_email_emailverified("u1", "u1 name", "one@home.com", true)
     ).await?;
-    assert!(matches!(r.status(), lambda_http::http::StatusCode::OK));
-    let r: constructs::Account = serde_json::from_str(r.body().as_str())?;
     assert!(r.user_id.eq("u1"));
     assert!(r.prefix.unwrap().eq("prefix_u1"));
 

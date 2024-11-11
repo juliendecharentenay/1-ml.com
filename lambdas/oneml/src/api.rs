@@ -17,3 +17,12 @@ impl Request {
   }
 }
 
+fn to_response<I>(item: &I) -> Result<lambda_http::Response<String>>
+where I: serde::Serialize
+{
+  Ok(lambda_http::Response::builder()
+     .status(lambda_http::http::StatusCode::OK)
+     .body(serde_json::to_string(item)?)?
+  )
+}
+
