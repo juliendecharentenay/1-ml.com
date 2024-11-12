@@ -3,7 +3,6 @@ use super::*;
 #[derive(serde::Serialize)]
 pub struct Item {
   email: String,
-  user_id: String,
   status: constructs::email::Status,
   count_all_time: u32,
   count_6_days: u32,
@@ -111,7 +110,6 @@ where T: traits::store::EmailStore, C: derive_sql::traits::Connection<R>, R: der
       let last_email = last_emails.iter().find(|c| c.email.eq(e.email.as_str())).map(|c| c.date.clone());
       Item {
         email: e.email,
-        user_id: e.user_id,
         status: e.status,
         count_all_time, 
         count_6_days,
