@@ -4,6 +4,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+  #[error("Date would be out of range")]
+  DateOutOfRange,
   #[error(transparent)]
   DeriveSqlError(#[from] derive_sql::Error),
   #[error("Email account `{0}` does not match identity account")]

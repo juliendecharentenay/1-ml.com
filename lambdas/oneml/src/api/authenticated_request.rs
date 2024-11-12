@@ -19,7 +19,7 @@ impl AuthenticatedRequest {
     match self {
       AuthenticatedRequest::GetMe           => to_response(&me_get::implementation(&aws::Store::default().await?, identity).await?),
       AuthenticatedRequest::PatchMe(update) => to_response(&me_patch::implementation(&aws::Store::default().await?, identity, update).await?),
-      AuthenticatedRequest::GetEmail                    => to_response(&email_get::implementation(&aws::Store::default().await?, &mut db::connection()?, identity).await?),
+      AuthenticatedRequest::GetEmail                    => to_response(&email_get::implementation(&aws::Store::default().await?, &mut db::connection()?, identity, chrono::Utc::now().naive_local()).await?),
       AuthenticatedRequest::PatchEmail { email, body }  => to_response(&email_patch::implementation(&aws::Store::default().await?, identity, email.as_str(), body).await?),
       AuthenticatedRequest::GetReceivedEmail { email } => to_response(&received_email_get::implementation(&mut db::connection()?, identity, email.as_str()).await?),
     }

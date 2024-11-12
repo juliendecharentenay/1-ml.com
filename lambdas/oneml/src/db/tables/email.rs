@@ -25,3 +25,18 @@ impl Email {
     }
   }
 }
+
+#[cfg(test)]
+impl Email {
+  pub fn from_id_message_id_date_subject_from_to_forwarded(id: &str, message_id: &str, date: &chrono::naive::NaiveDateTime, subject: &str, from: &str, to: &str, forwarded: bool) -> Email {
+    Email {
+      id: id.to_string(),
+      message_id: message_id.to_string(),
+      date: date.clone(),
+      subject: subject.to_string(), 
+      from: from.to_string(), 
+      to: to.to_string(), 
+      forwarded,
+    }
+  }
+}
