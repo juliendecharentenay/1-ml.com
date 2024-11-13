@@ -20,19 +20,18 @@
             <thead>
               <tr class="border-t border-gray-200">
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                  <a href="#/" class="flex" @click="sort_by('address')">
                   <span class="lg:pl-2">Address</span>
-                  <ArrowNarrowUpIcon class="w-5 h-5" v-if="sorted_by('address') === 1" />
-                  <ArrowNarrowDownIcon class="w-5 h-5" v-if="sorted_by('address') === -1" />
-                  </a>
                 </th>
-                <!-- <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">Activity</th> -->
+                <th class="hidden md:table-cell px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center" scope="col">
+                  <div class="md:block lg:hidden xl:block">
+                    <div>Last activity</div><div># recent emails/total emails</div>
+                  </div>
+                  <div class="hidden lg:block xl:hidden">
+                    <div># recent emails</div><div>total emails</div>
+                  </div>
+                </th>
                 <th class="pr-6 md:pr-12 lg:pr-24 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" scope="col">
-                  <a href="#/" class="flex justify-center" @click="sort_by('status')">
                   Status
-                  <ArrowNarrowUpIcon class="w-5 h-5" v-if="sorted_by('status') === 1" />
-                  <ArrowNarrowDownIcon class="w-5 h-5" v-if="sorted_by('status') === -1" />
-                  </a>
                 </th>
               </tr>
             </thead>
@@ -40,15 +39,28 @@
               <tr v-for="email in emails"
                   :key="email.email"
                   >
-                <td class="px-2 sm:px-4 md:px-6 py-1 md:py-2 max-w-0 w-full text-sm font-medium text-gray-900">
+                <td class="px-2 sm:px-4 md:px-6 py-1 md:py-2 text-sm font-medium text-gray-900">
                   <div class="lg:pl-2 truncate">
                     {{ email.email }}
                   </div>
                 </td>
-                <!-- <td class="px-6 py-3 text-sm text-gray-500 font-medium">
-                  7/25
-                </td> -->
-                <td class="pr-6 md:pr-12 lg:pr-24 py-1 md:py-2 whitespace-nowrap text-center text-sm font-medium">
+                <td class="hidden md:table-cell px-6 py-3 text-sm text-gray-500 font-medium text-center">
+                  <div v-if="email.count_all_time > 0">
+                    <div class="hidden md:block lg:hidden xl:block">
+                      <div v-if="email.last_email !== null">
+                        {{ email.last_email.split(" ")[0] }}
+                      </div>
+                      <div v-else>-</div>
+                      <div>Recent: {{ email.count_6_days }}/All time: {{ email.count_all_time }}</div>
+                    </div>
+                    <div class="hidden lg:block xl:hidden">
+                      <div>Recent: {{ email.count_6_days }}</div>
+                      <div>All time: {{ email.count_all_time }}</div>
+                    </div>
+                  </div>
+                  <div v-else>-</div>
+                </td>
+                <td class="pr-6 md:pr-12 lg:pr-24 py-1 md:py-2 whitespace-nowrap text-sm font-medium flex flex-row justify-end">
                   <div>
                     <select class="mt-1 block pl-3 pr-10 py-1 text-sm sm-gray-300 ring-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                             @change="set_status(email.email, $event.target.value)"
@@ -72,19 +84,16 @@
 </template>
 <script>
 import { get, patch } from "@/js/api.js";
-import { ArrowNarrowUpIcon, ArrowNarrowDownIcon, } from "@heroicons/vue/outline";
 
 export default {
   name: "HomeView",
   props: ['user', 'search'],
   emits: ["loading", "on_error"],
   components: {
-    ArrowNarrowUpIcon, ArrowNarrowDownIcon,
   },
   data: function() {
     return {
       p_emails: [],
-      sort: [],
     };
   },
   mounted: function() {
@@ -104,17 +113,27 @@ export default {
           let re = new RegExp(this.search, "i");
           emails = emails.filter((e) => re.test(e.email));
         }
-        for (const sort of this.sort) {
-          if (sort.label === "address") {
-            emails.sort((a, b) => a.email.localeCompare(b.email));
-          } else if (sort.label === "status") {
-            emails.sort((a, b) => a.status.localeCompare(b.status));
-          } else {
-            throw new Error(`Sorting label ${sort.label} is not supported`);
+        return emails.sort((a, b) => {
+          if (a.last_email === b.last_email) {
+            if (a.count_6_days !== b.count_6_days) {
+              return b.count_6_days - a.count_6_days;
+            } else {
+              return b.count_all_time - a.count_all_time;
+            }
+          } else if (a.last_email !== null) {
+            if (b.last_email !== null) {
+              if (a.last_email > b.last_email) {
+                return -1;
+              } else { // As a.last_email !== b.last_email
+                return 1;
+              }
+            } else {
+              return -1;
+            }
+          } else { // if (b.last_email !== null) {
+            return 1;
           }
-          if (sort.direction === -1) { emails.reverse(); }
-        }
-        return emails;
+        });
       } catch(e) {
         this.on_error("Error in emails", e);
       }
@@ -131,29 +150,6 @@ export default {
       } catch(e) {
         this.on_error("Error in set_status", e);
       }
-    },
-    sort_by: function(label) {
-      try {
-        let sort = this.sort.find((e) => e.label === label);
-        sort = {label, direction: (sort === undefined ? 1 : -1*sort.direction)};
-        this.sort = [...this.sort.filter((e) => e.label !== label), sort];
-        console.log("Sort = ", this.sort);
-      } catch (e) {
-        this.on_error("Error in sort_by", e);
-      }
-    },
-    sorted_by: function(label) {
-      try {
-        if (this.sort.length > 0) {
-          let sort = this.sort[this.sort.length-1];
-          if (sort.label === label) {
-            return sort.direction;
-          }
-        }
-      } catch (e) {
-        this.on_error("Error in sorted_by", e);
-      }
-      return null;
     },
     on_error: function(message, error) {
       this.$emit('on_error', { message, error });

@@ -42,46 +42,37 @@ module.exports = defineConfig({
         {
           email: "first@jdc.1-ml.com",
           status: "Forward",
+          count_all_time: 6,
+          count_6_days: 6,
+          last_email: "2024-11-12 11:12:32.313971508",
         },
         {
           email: "second@jdc.1-ml.com",
           status: "ForwardAsText",
+          count_all_time: 0,
+          count_6_days: 0,
+          last_email: null,
         },
         {
           email: "third@jdc.1-ml.com",
           status: "Block",
+          count_all_time: 6,
+          count_6_days: 0,
+          last_email: "2024-11-13 11:12:32.313971508",
         },
         {
           email: "fourth@jdc.1-ml.com",
           status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
-        },
-        {
-          email: "fourth@jdc.1-ml.com",
-          status: "Block",
+          count_all_time: 14,
+          count_6_days: 10,
+          last_email: "2024-11-12 11:12:32.313971508",
         },
         {
           email: "a.very.long.address.to.see.what.happen@jdc.1-ml.com",
           status: "Block",
+          count_all_time: 2,
+          count_6_days: 0,
+          last_email: null,
         },
       ];
       devServer.app.get("/api/email", (request, response) => {
