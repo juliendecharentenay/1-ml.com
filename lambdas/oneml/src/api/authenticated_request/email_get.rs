@@ -31,6 +31,7 @@ impl<'a> derive_sql::traits::SelectStatement for SqlLastEmailHelper<'a> {
     Ok(format!("
 SELECT `{to}`,MAX({date}) FROM {email}
 WHERE {id}='{user_id}'
+GROUP BY `{to}`
       ",
       email=db::tables::SqlEmail::TABLE_NAME,
       id=db::tables::SqlEmail::ID,
