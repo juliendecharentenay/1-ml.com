@@ -1,3 +1,22 @@
+//[openapi] openapi: 3.1.0
+//[openapi] info:
+//[openapi]   title: 1-ml.com API
+//[openapi]   version: 1.0.0
+//[openapi]   
+//[openapi] paths:
+//[openapi]  /api/me:
+//[openapi]    get:
+//[openapi]      $ref: '#/components/authenticated_request/me_get'
+//[openapi]    patch:
+//[openapi]      $ref: '#/components/authenticated_request/me_patch'
+//[openapi]  /api/email:
+//[openapi]    get:
+//[openapi]      $ref: '#/components/authenticated_request/email_get'
+//[openapi]  /api/ok:
+//[openapi]    get:
+//[openapi]      $ref: '#/components/unauthenticated_request/get_api_ok'
+//[openapi]
+//[openapi] components:
 use super::*;
 
 mod authenticated_request; pub use authenticated_request::AuthenticatedRequest;

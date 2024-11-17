@@ -1,3 +1,26 @@
+//[openapi]    me_get:
+//[openapi]      summary: Retrieve logged-in user details
+//[openapi]      operationId: meGet
+//[openapi]      responses:
+//[openapi]        '200':
+//[openapi]          description: OK
+//[openapi]          content:
+//[openapi]            application/json:
+//[openapi]              schema:
+//[openapi]                type: object
+//[openapi]                properties:
+//[openapi]                  user_id: string
+//[openapi]                  prefix: string
+//[openapi]                  email: string
+//[openapi]                  status: string
+//[openapi]                  date_created: string
+//[openapi]              example:
+//[openapi]                user_id: "a2353424-50e1-70d5-7f18-56d06135bc9c"
+//[openapi]                prefix: "prefix_u1"
+//[openapi]                email: "one@example.com"
+//[openapi]                status: "Active"
+//[openapi]                date_created: "2022-01-15T08:00:00.000000000Z"
+//[openapi]
 use super::*;
 
 pub async fn implementation<T>(store: &T, identity: Identity) -> Result<constructs::Account>

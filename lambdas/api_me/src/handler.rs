@@ -60,6 +60,14 @@ impl Handler {
           },
         },
 
+        "/api/email/{email}" if matches!(context.http_method, lambda_http::http::Method::GET)
+        => oneml::api::Request::Authenticated {
+          identity: identity.ok_or("Unauthenticated request")?,
+          request: oneml::api::AuthenticatedRequest::GetReceivedEmail {
+            email: self.event.path_parameters().first("email").map(urlencoding::decode).ok_or("Unable to retrieve email")??.to_string(),
+          },
+        },
+
         "/api/ok" if matches!(context.http_method, lambda_http::http::Method::GET)
         => oneml::api::Request::Unauthenticated {
           request: oneml::api::UnauthenticatedRequest::Ok,

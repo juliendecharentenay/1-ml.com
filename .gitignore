@@ -6,3 +6,5 @@ package-lock.json
 
 *.swp
 *.ignore
+openapi.yaml
+.vscode

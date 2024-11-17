@@ -1,3 +1,4 @@
+//[openapi]   unauthenticated_request:
 use super::*;
 
 pub enum UnauthenticatedRequest {
@@ -12,6 +13,20 @@ impl UnauthenticatedRequest {
   }
 }
 
+//[openapi]    get_api_ok:
+//[openapi]      summary: Health check
+//[openapi]      operationId: getOk
+//[openapi]      responses:
+//[openapi]        '200':
+//[openapi]          description: OK
+//[openapi]          content:
+//[openapi]            text/plain:
+//[openapi]              schema: 
+//[openapi]                type: string
+//[openapi]              examples:
+//[openapi]                test_request:
+//[openapi]                  value: "OK"
+//[openapi]
 impl UnauthenticatedRequest {
   async fn ok_impl(&self) -> Result<lambda_http::Response<String>> {
     log::info!("ApiOk: request");

@@ -7,7 +7,7 @@ This implementation powers https://www.1-ml.com.
 
 The implementation is divided across the following directories:
 
-* `www`: a VueJS based website;
+* `vue3`: a VueJS based website;
 
 # Installation and Usage
 
@@ -16,4 +16,18 @@ The implementation is divided across the following directories:
 * [Node.js](https://nodejs.org/en/) - for compilation of website;
 
 ## Website:
+
+##
+API mocking for development purposes:
+
+```
+# Pre-requisite
+npm install -g @stoplight/prism-cli
+
+# Run a mock API server
+#  - Creates an openapi.yaml file
+#  - start mock server (using prism) on port 8010
+./openapi.sh
+```
+
 

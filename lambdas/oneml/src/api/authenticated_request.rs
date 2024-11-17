@@ -1,3 +1,4 @@
+//[openapi]   authenticated_request:
 use super::*;
 
 mod me_get;

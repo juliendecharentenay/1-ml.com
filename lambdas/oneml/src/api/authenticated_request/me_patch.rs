@@ -1,3 +1,10 @@
+//[openapi]    me_patch:
+//[openapi]      summary: Update logged-in user details
+//[openapi]      operationId: mePatch
+//[openapi]      responses:
+//[openapi]        '200':
+//[openapi]          description: OK
+//[openapi]
 use super::*;
 
 pub async fn implementation<T>(store: &T, identity: Identity, update: std::collections::HashMap<String, String>) -> Result<constructs::Account>

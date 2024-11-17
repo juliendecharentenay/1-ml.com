@@ -1,3 +1,50 @@
+//[openapi]    email_get:
+//[openapi]      summary: Retrieve the list of emails and associated details for the logged-in user
+//[openapi]      operationId: emailGet
+//[openapi]      responses:
+//[openapi]        '200':
+//[openapi]          description: OK
+//[openapi]          content:
+//[openapi]            application/json:
+//[openapi]              schema:
+//[openapi]                type: array
+//[openapi]                items:
+//[openapi]                  email: string
+//[openapi]                  status: string
+//[openapi]                  count_all_time: integer
+//[openapi]                  count_6_days: integer
+//[openapi]                  last_email:
+//[openapi]                    type:
+//[openapi]                      - string
+//[openapi]                      - 'null'
+//[openapi]              example:
+//[openapi]                - email: "first@prefix_u1.1-ml.com"
+//[openapi]                  status: "Forward"
+//[openapi]                  count_all_time: 6
+//[openapi]                  count_6_days: 6
+//[openapi]                  last_email: "2024-11-12 11:12:32.313971508"
+//[openapi]                - email: "second@prefix_u1.1-ml.com"
+//[openapi]                  status: "ForwardAsText"
+//[openapi]                  count_all_time: 0
+//[openapi]                  count_6_days: 0
+//[openapi]                  last_email: null
+//[openapi]                - email: "third@prefix_u1.1-ml.com"
+//[openapi]                  status: "Block"
+//[openapi]                  count_all_time: 6
+//[openapi]                  count_6_days: 0
+//[openapi]                  last_email: "2024-11-13 11:12:32.313971508"
+//[openapi]                - email: "fourth@prefix_u1.1-ml.com"
+//[openapi]                  status: "Block"
+//[openapi]                  count_all_time: 14
+//[openapi]                  count_6_days: 10
+//[openapi]                  last_email: "2024-11-12 11:12:32.313971508"
+//[openapi]                - email: "a.very.long.address.to.see.what.happen@prefix_u1.1-ml.com"
+//[openapi]                  status: "Block"
+//[openapi]                  count_all_time: 2
+//[openapi]                  count_6_days: 0
+//[openapi]                  last_email: null
+
+//[openapi]
 use super::*;
 
 #[derive(serde::Serialize)]
