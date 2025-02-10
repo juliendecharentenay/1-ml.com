@@ -17,7 +17,6 @@ futures-util = "0"
 regex        = "1"
 derive_builder = "0"
 thiserror    = "1"
-rusqlite     = { version = "0", features = [ "chrono" ] }
 futures      = { version = "0" }
 lambda_http  = "0"
 
@@ -25,8 +24,7 @@ aws-config       = "1"
 aws-sdk-dynamodb = "1"
 aws-sdk-sns      = "1"
 
-## derive-sql = { path = "../../../derive-sql/derive-sql", features = [ "sqlite" ] }
-derive-sql = { version = "0", features = [ "sqlite" ] }
+derive-sql = { version = "0", features = [ "sqlite", "postgres" ] }
 
 [dev-dependencies]
 # derive_setter  = "0"
