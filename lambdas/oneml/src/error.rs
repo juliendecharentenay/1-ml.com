@@ -4,6 +4,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+  #[error(transparent)]
+  PostgresError(#[from] postgres::Error),
   #[error("Date would be out of range")]
   DateOutOfRange,
   #[error(transparent)]

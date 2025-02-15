@@ -3,5 +3,6 @@ resolver = "2"
 members = [
   "oneml",
   "api_me",
-  "ses_handler"
+  "ses_handler",
+  "bin/migrate_sqlite_postgres"
 ]

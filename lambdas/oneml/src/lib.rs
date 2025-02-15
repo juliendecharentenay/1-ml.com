@@ -16,4 +16,5 @@ pub use identity::{Identity, IdentityBuilder, IdentityBuilderError};
 pub use derive_sql;
 pub use serde;
 use derive_sql::rusqlite;
+use derive_sql::postgres;
 
