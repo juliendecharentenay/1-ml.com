@@ -6,4 +6,6 @@ pub enum Error {
   UnsupportedMimetype { ty: String },
   #[error(transparent)]
   MailParseError(#[from] mailparse::MailParseError),
+  #[error(transparent)]
+  StdEnvVarError(#[from] std::env::VarError),
 }

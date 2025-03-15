@@ -25,7 +25,7 @@ impl Mail {
             let s3_client = aws_sdk_s3::Client::new(self.config.as_ref().ok_or_else(|| SimpleError::new("Unable to retrieve config"))?);
             let s3_message = s3_client
                 .get_object()
-                .bucket(Config::BUCKET)
+                .bucket(Config::bucket()?)
                 .key(format!("emails/{}", &self.message_id))
                 .send()
                 .await?
@@ -63,7 +63,7 @@ impl Mail {
             .ok_or_else(|| SimpleError::new("Unable to retrieve client"))?
             .send_email()
             .source(from)
-            .source_arn(Config::SES_IDENTITY)
+            .source_arn(Config::ses_identity()?)
             .reply_to_addresses(reply_to.to_string())
             .return_path(reply_to)
             .destination(

@@ -1,5 +1,4 @@
 Cargo.lock
-config.rs
 target
 node_modules
 package-lock.json
