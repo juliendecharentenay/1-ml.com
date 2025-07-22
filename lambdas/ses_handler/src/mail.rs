@@ -43,6 +43,7 @@ impl Mail {
                 .body(
                     {
                         let mut builder = aws_sdk_ses::types::Body::builder();
+                        let text_is_some = text.is_some(); let html_is_some = html.is_some();
                         if send_text {
                           if let Some(text) = text { builder = builder.text(aws_sdk_ses::types::Content::builder().data(text).build()?); }
                         }
@@ -51,6 +52,12 @@ impl Mail {
                         }
                         if builder.get_text().is_none() && builder.get_html().is_none() {
                           log::warn!("Body does not have text or html content! Default message of appology is specified");
+                          oneml::sns_notify(format!(r#"Unable to retrieve email context.
+                          send_text: {send_text}
+                          send_html: {send_html}
+                          text? {text_is_some}
+                          html? {html_is_some}
+                          "#));
                           builder = builder.text(aws_sdk_ses::types::Content::builder().data("Sorry. Unable to retrieve original email body").build()?);
                         }
                         builder.build()

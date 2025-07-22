@@ -26,7 +26,7 @@ async fn handle_f(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Er
       },
       Err(e)   => {
           log::error!("An error occured: {:?}", e);
-          oneml::sns_notify(format!("{e:?}"));
+          oneml::sns_notify(format!("{e:#?}"));
           Err(e)
       },
    }
