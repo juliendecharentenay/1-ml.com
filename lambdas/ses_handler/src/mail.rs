@@ -49,6 +49,10 @@ impl Mail {
                         if send_html {
                           if let Some(html) = html { builder = builder.html(aws_sdk_ses::types::Content::builder().data(html).build()?); }
                         }
+                        if builder.get_text().is_none() && builder.get_html().is_none() {
+                          log::warn!("Body does not have text or html content! Default message of appology is specified");
+                          builder = builder.text(aws_sdk_ses::types::Content::builder().data("Sorry. Unable to retrieve original email body").build()?);
+                        }
                         builder.build()
                     }
                     )
@@ -118,8 +122,8 @@ mod tests {
         let content = eml_content();
         let (subject, plain, html) = Mail::parse_eml(content)?;
         println!("{subject:#?}");
-        println!("{plain:#?}");
-        println!("{html:#?}");
+        println!("plain text: {:#?}", plain.is_some());
+        println!("html text: {:#?}", html.is_some());
         assert!(subject.is_some());
         assert!(plain.is_some() || html.is_some());
         Ok(())
