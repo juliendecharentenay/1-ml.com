@@ -151,6 +151,23 @@ mod tests {
     }
 
     fn eml_content() -> &'static str {
-      include_str!("mail.eml")
+      include_str!("data/mail.eml")
+    }
+
+    #[test]
+    fn parses_emails() -> Result<(), Box<dyn std::error::Error>> {
+      let list_of_contents = [
+        include_str!("data/mail.eml"),
+        include_str!("data/20250904-0850.eml"),
+      ];
+      for content in list_of_contents.iter() {
+        let (subject, plain, html) = Mail::parse_eml(content)?;
+        println!("{subject:#?}");
+        println!("plain text: {:#?}", plain.is_some());
+        println!("html text: {:#?}", html.is_some());
+        assert!(subject.is_some());
+        assert!(plain.is_some() || html.is_some());
+      }
+      Ok(())
     }
 }
